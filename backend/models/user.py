@@ -1,5 +1,4 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
 from bson import ObjectId  # Correct import from bson
 
 # Helper class for MongoDB ObjectId

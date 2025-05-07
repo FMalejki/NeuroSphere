@@ -15,39 +15,20 @@ venv/
 # Logs
 *.log
 
-# SQLite database files
-*.sqlite3
-*.db
-
 # VS Code settings
 .vscode/
 
 # macOS system files
 .DS_Store
 
-# Docker-related files (ignore only generated clutter, not configs)
-*.pid
-
-# Uvicorn specific
-*.reload
-
 # Other system files
 Thumbs.db
-
-# AI API keys or credentials
-*.key
-*.pem
-*.crt
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
 # Temporary Python files
 *.~*
-
-# SQL dump files
-*.sql
-*.dump
 
 # Cache and temporary files
 *.cache
@@ -76,6 +57,3 @@ htmlcov/
 
 # Bandit security tool reports
 .bandit
-
-# Profiling data
-*.prof
