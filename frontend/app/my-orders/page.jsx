@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar';
 import Loading from '@/components/Loading';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import handlePurchaseWithFee from '@/models/Payments';
 
 const MyOrders = () => {
   const { currency, user, getToken } = useAppContext();
@@ -18,7 +19,8 @@ const MyOrders = () => {
   const fetchOrders = async () => {
     try {
       const token = await getToken();
-      const { data } = await axios.get('/api/order/list', {
+      const { data } = await axios.get('/api/order/list', 
+      {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -97,7 +99,13 @@ const MyOrders = () => {
                     </p>
                   </div>
                   <button
-                    onClick={() => console.log('płać synu')}
+                    onClick={() => handlePurchaseWithFee(
+                      order.amount,  
+                      order.seller_id, 
+                      user.id, 
+                      order.items[0].product.id
+                      )
+                    }
                     className="bg-violet-500 text-white px-4 py-2 rounded-md"
                   >
                     Pay

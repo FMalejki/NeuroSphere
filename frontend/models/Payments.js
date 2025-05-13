@@ -19,13 +19,16 @@ const getSellerPublicKey = async (seller_id) => {
             },
         });
 
-        if (!response.ok) {
+        if (!response.ok) 
+        {
             throw new Error(`Failed to fetch seller data: ${response.status}`);
         }
 
         const seller = await response.json();
         return seller.public_key; // Zwraca klucz publiczny sprzedawcy
-    } catch (err) {
+    } 
+    catch (err) 
+    {
         console.error("Error fetching seller data:", err);
         throw new Error("Unable to fetch seller data.");
     }
@@ -41,13 +44,16 @@ const getUserProducts = async (user_id) => {
             },
         });
 
-        if (!response.ok) {
+        if (!response.ok) 
+        {
             throw new Error(`Failed to fetch user products: ${response.status}`);
         }
 
         const products = await response.json();
         return products; // Zwraca tablicę produktów użytkownika
-    } catch (err) {
+    } 
+    catch (err) 
+    {
         console.error("Error fetching user products:", err);
         throw new Error("Unable to fetch user products.");
     }
@@ -56,13 +62,15 @@ const getUserProducts = async (user_id) => {
 const handlePurchaseWithFee = async (amount, seller_id, user_id, product_id) => {
     try {
         // Check if Phantom Wallet is installed
-        if (!window.solana || !window.solana.isPhantom) {
+        if (!window.solana || !window.solana.isPhantom) 
+        {
             alert("Please install Phantom Wallet!");
             return;
         }
         
         // Connect to Phantom Wallet if not already connected
-        if (!window.solana.isConnected) {
+        if (!window.solana.isConnected) 
+        {
             await window.solana.connect();
         }
 
@@ -76,7 +84,8 @@ const handlePurchaseWithFee = async (amount, seller_id, user_id, product_id) => 
         console.log("User products:", userProducts);
 
         // Sprawdź, czy użytkownik już kupił ten produkt
-        if (userProducts.some(product => product.id === product_id)) {
+        if (userProducts.some(product => product.id === product_id)) 
+        {
             alert("You have already purchased this product.");
             return;
         }
@@ -122,7 +131,8 @@ const handlePurchaseWithFee = async (amount, seller_id, user_id, product_id) => 
         // Confirm the transaction
         const confirmation = await connection.confirmTransaction(signature, 'confirmed');
         
-        if (confirmation.value.err) {
+        if (confirmation.value.err) 
+        {
             alert('Transaction confirmation failed');
             return;
         }
@@ -144,17 +154,22 @@ const handlePurchaseWithFee = async (amount, seller_id, user_id, product_id) => 
                 }),
             });
 
-            if (!updateResponse.ok) {
+            if (!updateResponse.ok) 
+            {
                 throw new Error(`Failed to update user products: ${updateResponse.status}`);
             }
 
             const updateResult = await updateResponse.json();
             console.log("Product successfully added to user:", updateResult);
 
-        } catch (backendErr) {
+        } 
+        catch (backendErr) 
+        {
             console.error('Error updating user products in backend:', backendErr);
         }
-    } catch (err) {
+    } 
+    catch (err) 
+    {
         console.error('Error during purchase with fee:', err);
         alert(`An error occurred: ${err.message}`);
     }
