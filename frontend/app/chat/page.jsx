@@ -183,7 +183,7 @@ const handleSendMessage = async () => {
       {/* Główny kontener czatu */}
       <div className="flex-1 flex overflow-hidden pt-16">
         {/* Lewy panel - lista czatów */}
-        <div className="w-64 bg-[#121212] border-r border-gray-800 flex flex-col h-full hidden md:flex">
+        <div className="w-64 bg-[#121212] border-r border-gray-800 flex flex-col h-full md:flex">
           <div className="p-4">
             <button
               onClick={handleNewChat}
@@ -242,7 +242,7 @@ const handleSendMessage = async () => {
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-white">
-                <h1 className="text-3xl font-bold mb-2 font-bold text-violet-300 tracking-wider">NeuroSphere Chat</h1>
+                <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
                 <p className="text-gray-400 max-w-md">
                   Rozpocznij rozmowę z naszym modelem AI
                 </p>

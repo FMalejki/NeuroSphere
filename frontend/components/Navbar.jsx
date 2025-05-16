@@ -105,7 +105,8 @@ const Navbar = () => {
               )}
               <UserButton.MenuItems>
                 <UserButton.Action
-                  label="Chat AI"
+                  label="Chat AI"s
+                  labelIcon={<BoxIcon />}
                   onClick={() => router.push('/chat')}
                 />
               </UserButton.MenuItems>
@@ -187,6 +188,7 @@ const Navbar = () => {
               <UserButton.MenuItems>
                 <UserButton.Action
                   label="Chat AI"
+                  labelIcon={<BoxIcon />}
                   onClick={() => router.push('/chat')}
                 />
               </UserButton.MenuItems>
