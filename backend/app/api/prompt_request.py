@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from app.models.prompt_request_model import PromptRequestModel
 from app.services.prompt_service import process_prompt_request
+from app.db.get_prompt_data import get_user_prompts  # Import funkcji do pobierania promptów
 
 router = APIRouter()
 
@@ -22,3 +23,13 @@ async def process_ai_request(request: PromptRequestModel):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+@router.get("/get_user_prompts/{user_id}", response_model=list)
+async def get_user_prompts_endpoint(user_id: str):
+    try:
+        prompts = await get_user_prompts(user_id)
+        if not prompts:
+            raise HTTPException(status_code=404, detail="No prompts found for this user")
+        return prompts
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching prompts: {str(e)}")

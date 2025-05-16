@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 from bson import ObjectId
 from app.models.conversation_model import Conversation, ConversationCreate
-from app.db.get_conversation_info import create_conversation_in_db, get_conversation_info
+from app.db.get_conversation_info import create_conversation_in_db, get_conversation_info, list_conversations_from_db
 from app.services.openai_service import parse_response
 
 router = APIRouter()
@@ -16,14 +16,22 @@ async def create_conversation(conv_data: ConversationCreate):
             "chosen_prompts": conv_data.chosen_prompts,
             "parameters": conv_data.parameters
         }
-        conv_final = await create_conversation_in_db(conv_dict)
-        return conv_final
+        new_conversation = await create_conversation_in_db(conv_dict)
+        return new_conversation
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating conversation: {str(e)}")
 
-
+@router.get("/conversations/{user_id}", response_model=List[Conversation])
+async def get_user_conversations(user_id: str):
+    try:
+        conversations = await list_conversations_from_db(user_id)
+        if not conversations:
+            raise HTTPException(status_code=404, detail="No conversations found for this user")
+        return conversations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching conversations: {str(e)}")
 
 @router.get("/conversations/{user_id}", response_model=Conversation)
 async def get_conversation(user_id: str):
