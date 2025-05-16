@@ -23,11 +23,11 @@ export async function POST(req) {
       { upsert: true } // stworzy użytkownika, jeśli nie istnieje
     );
 
-    console.log(`✅ Prompt ${product_id} added to user ${user_id}`);
+    console.log(`Prompt ${product_id} added to user ${user_id}`);
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('❌ Error in /api/user/add-product:', err);
+    console.error('Error in /api/user/add-product:', err);
     return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
 }
