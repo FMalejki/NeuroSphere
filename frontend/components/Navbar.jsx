@@ -28,18 +28,16 @@ const Navbar = () => {
           Chat AI
         </Link>
         {/* TODO: Add about us page */}
-        
-        
-        {/*  <Link href="/" className="hover:text-blue-300 transition">  
-            About Us
-          </Link>
-          { TODO: Add contact page }
-          <Link href="/" className="hover:text-blue-300 transition">
-            Contact
-          </Link>
 
-        */}
-
+        {/*}
+        <Link href="/" className="hover:text-blue-300 transition">
+          About Us
+        </Link>
+        {}
+        <Link href="/" className="hover:text-blue-300 transition">
+          Contact
+        </Link>
+            */}
         {isSeller && (
           <button
             onClick={() => router.push('/seller')}

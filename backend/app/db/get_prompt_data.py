@@ -4,9 +4,10 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 from typing import Dict, Any, Optional
 from app.models.prompt_model import PromptModel
+from pymongo import MongoClient
 
 load_dotenv()
-MONGO_URI = os.getenv("MONGODB_URI")
+MONGO_URI = os.getenv("MONGO_URI")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 
 try:
@@ -14,6 +15,9 @@ try:
     db = client[MONGO_DB_NAME]
 except Exception as e:
     raise RuntimeError(f"Failed to connect to MongoDB: {e}")
+
+client = MongoClient(MONGO_URI)
+db = client[MONGO_DB_NAME]
 
 async def get_prompt_data(prompt_id: str) -> Optional[Dict[str, Any]]:
     try:
@@ -32,3 +36,11 @@ async def get_prompt_data(prompt_id: str) -> Optional[Dict[str, Any]]:
 
     except Exception as e:
         raise RuntimeError(f"Error while fetching prompt data: {e}")
+
+async def get_user_prompts(user_id: str):
+    try:
+        prompts = list(db.prompts.find({"user_id": user_id}))
+        return prompts
+    except Exception as e:
+        print(f"Error fetching prompts for user {user_id}: {e}")
+        return []

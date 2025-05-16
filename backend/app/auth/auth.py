@@ -22,6 +22,7 @@ def authenticate_user(login_data: UserLogin):
     else:  # Otherwise, treat it as a username
         user = users_collection.find_one({"username": login_data.identifier})
 
+
     # If user not found or password doesn't match
     if not user or user["password"] != login_data.password:
         raise HTTPException(status_code=401, detail="Invalid credentials")

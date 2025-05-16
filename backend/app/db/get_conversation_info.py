@@ -100,44 +100,22 @@ async def update_message_to_conversation(conversation_id: str, message: str, rol
     except Exception as e:
         raise RuntimeError(f"Error while adding message to conversation: {e}")
     
-    
 
-
-
-#async def list_conversations_from_db(user_id: str):
-#    conversations = []
-#    async for conversation in conversation_collection.find({"user_id": user_id}):
-#        conversations.append(Conversation(
-#            id=str(conversation["_id"]),
-#            user_id=conversation["user_id"],
-#            chosen_model=conversation["chosen_model"],
-#            chosen_prompts=conversation["chosen_prompts"],
-#            parameters=conversation["parameters"],
-#            messages=conversation["messages"],
-#        ))
-#    return conversations
-    
-    
-    
-#if not ObjectId.is_valid(conversation_id):
-#    print("Invalid ObjectId format")
-#    return
-#
-#conversation = await conversation_collection.find_one({"_id": ObjectId(conversation_id)})
-#if not conversation:
-#    print("Conversation not found")
-#    return
-#
-#print("\n Conversation Info:")
-#print(f"ID: {conversation['_id']}")
-#print(f"User ID: {conversation.get('user_id')}")
-#print(f"Chosen Model: {conversation.get('chosen_model')}")
-#print(f"Chosen Prompts: {conversation.get('chosen_prompts')}")
-#print(f"Parameters: {conversation.get('parameters')}")
-#print("Messages:")
-#for msg in conversation.get("messages", []):
-#    print(f" - [{msg['role']}] {msg['content']}")
-
-#if __name__ == "__main__":
-#    conv_id = input("Enter the conversation ID: ").strip()
-#    asyncio.run(get_conversation_info(conv_id))
+async def list_conversations_from_db(user_id: str):
+    """
+    Pobiera listę konwersacji dla danego użytkownika z bazy danych.
+    """
+    try:
+        conversations = []
+        async for conversation in conversation_collection.find({"user_id": user_id}):
+            conversations.append(Conversation(
+                id=str(conversation["_id"]),
+                user_id=conversation["user_id"],
+                chosen_model=conversation["chosen_model"],
+                chosen_prompts=conversation["chosen_prompts"],
+                parameters=conversation["parameters"],
+                messages=conversation.get("messages", []),
+            ))
+        return conversations
+    except Exception as e:
+        raise RuntimeError(f"Error while listing conversations for user {user_id}: {e}")

@@ -121,6 +121,7 @@ const Chat = () => {
 const handleSendMessage = async () => {
   if (!input.trim()) return;
 
+  // Dodaj wiadomość użytkownika do listy wiadomości
   const userMessage = {
     id: Date.now(),
     content: input,
@@ -133,8 +134,10 @@ const handleSendMessage = async () => {
   setIsLoading(true);
 
   try {
+    // Pobierz token użytkownika
     const token = await getToken();
 
+    // Wyślij wiadomość do backendu
     const response = await fetch(`http://localhost:8000/prompt-request`, {
       method: 'POST',
       headers: {
@@ -142,7 +145,7 @@ const handleSendMessage = async () => {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        prompt_ids: selectedPrompts.map((prompt) => prompt.id), // Poprawka: Upewnij się, że przekazujesz ID promptów
+        prompt_ids: selectedPrompts.ids,
         model_id: selectedModel,
         user_message: input,
         user_id: user.id,
@@ -154,14 +157,16 @@ const handleSendMessage = async () => {
       throw new Error('Nie udało się wysłać wiadomości.');
     }
 
+    // Odbierz odpowiedź od backendu
     const data = await response.json();
     const botResponse = {
       id: Date.now() + 1,
-      content: data.response,
+      content: data.response, 
       role: 'assistant',
       timestamp: new Date(),
     };
 
+    // Dodaj odpowiedź bota do listy wiadomości
     setMessages((prev) => [...prev, botResponse]);
   } catch (err) {
     console.error('Błąd podczas wysyłania wiadomości:', err.message);
