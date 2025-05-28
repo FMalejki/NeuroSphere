@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 from pydantic import BaseModel
 
 
@@ -8,3 +8,4 @@ class PromptRequestModel(BaseModel):
     user_message: str
     user_id: str
     conversation_id: str
+    files: Optional[List[Any]]

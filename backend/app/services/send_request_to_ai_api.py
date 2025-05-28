@@ -25,16 +25,22 @@ async def send_request_to_ai_api(
         # Including files in the request. If files are provided.
         if files:
             for f in files:
-                if f.info.type.startswith("image/"):
-                    handle_image(f, content)
-                elif f.info.type == "text/plain":
-                    handle_text(f, content)
-                elif f.info.type == "application/pdf":
-                    handle_pdf(f, content)
-                elif f.info.type == "application/zip":
-                    handle_zip(f, content)
-                else:
-                    throw: NameError(f"Unsupported file type: {f.info.type}") # type: ignore
+                try:
+                    if hasattr(f, 'info') and hasattr(f.info, 'type'):
+                        if f.info.type.startswith("image/"):
+                            handle_image(f, content)
+                        elif f.info.type == "text/plain":
+                            handle_text(f, content)
+                        elif f.info.type == "application/pdf":
+                            handle_pdf(f, content)
+                        elif f.info.type == "application/zip":
+                            handle_zip(f, content)
+                        else:
+                            handle_default(f, content)
+                    else:
+                        print(f"Warning: File object missing required attributes: {f}")
+                except Exception as e:
+                    print(f"Error processing file: {str(e)}")
 
         full_prompt = "\n\n".join([prompt.text for prompt in prompts_data]) + f"\n\n{user_message}"
 
