@@ -12,7 +12,10 @@ const Chat = () => {
   const { getToken } = useAppContext();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [files, setFiles] = useState([]); // Changed to an array of files
+  const [previewMessage, setPreviewMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Added state for sidebar toggle
   const messagesEndRef = useRef(null);
   const [chats, setChats] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,17 +24,17 @@ const Chat = () => {
   const [availablePrompts, setAvailablePrompts] = useState([]);
   const [currentChat, setCurrentChat] = useState(null);
   useEffect(() => {
-    // Pobierz rozmowy użytkownika po załadowaniu komponentu
+    // Fetch user conversations on component load
     fetchUserConversations();
   }, []);
   useEffect(() => {
-    // Przewijanie do najnowszej wiadomości
+    // Scroll to the latest message
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const fetchUserPrompts = async () => {
     try {
-      const token = await getToken(); // Pobierz token użytkownika
+      const token = await getToken(); // Fetch user token
       const response = await fetch(`/api/user/get-prompts`, {
         method: 'POST',
         headers: {
@@ -107,7 +110,7 @@ const Chat = () => {
   }
 
   try {
-    const token = await getToken(); // Pobierz token użytkownika
+    const token = await getToken(); // Fetch user token
     const response = await fetch(`http://localhost:8000/conversations/`, {
       method: 'POST',
       headers: {
@@ -122,6 +125,7 @@ const Chat = () => {
       }),
     });
 
+    
     if (!response.ok) {
       throw new Error('Failed to create a new chat.');
     }
@@ -138,10 +142,24 @@ const Chat = () => {
   }
 };
 
-const handleSendMessage = async () => {
-  if (!input.trim()) return;
+const handleFileChange = (event) => {
+  const selectedFiles = Array.from(event.target.files);
+  setFiles((prevFiles) => [...prevFiles, ...selectedFiles]); // Add selected files to the list
+};
 
-  // Dodaj wiadomość użytkownika do listy wiadomości
+const handleRemoveFile = (index) => {
+  setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index)); // Remove file from the list
+};
+
+const handleInputChange = (e) => {
+  setInput(e.target.value);
+  setPreviewMessage(e.target.value); // Update message preview
+};
+
+const handleSendMessage = async () => {
+  if (!input.trim() && files.length === 0) return;
+
+  // Add user message to the list of messages
   const userMessage = {
     id: Date.now(),
     content: input,
@@ -151,31 +169,34 @@ const handleSendMessage = async () => {
 
   setMessages((prev) => [...prev, userMessage]);
   setInput('');
+  setPreviewMessage(null); // Reset message preview
   setIsLoading(true);
 
   try {
     const token = await getToken();
+    const formData = new FormData();
+    formData.append('user_message', input);
+    formData.append('user_id', user.id);
+    formData.append('conversation_id', currentChat.id);
+    formData.append('model_id', selectedModel);
+    formData.append('prompt_ids', JSON.stringify(selectedPrompts));
+    files.forEach((file, index) => {
+      formData.append(`files[${index}]`, file); // Add files to the request
+    });
 
     const response = await fetch(`http://localhost:8000/prompt-request`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        prompt_ids: selectedPrompts,
-        model_id: selectedModel,
-        user_message: input,
-        user_id: user.id,
-        conversation_id: currentChat.id,
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
       throw new Error('Failed to send the message.');
     }
 
-    // Odbierz odpowiedź od backendu
+    // Receive response from backend
     const data = await response.json();
     const botResponse = {
       id: Date.now() + 1,
@@ -190,72 +211,123 @@ const handleSendMessage = async () => {
     alert('An error occurred while sending the message.');
   } finally {
     setIsLoading(false);
+    setFiles([]); // Reset file list after sending
   }
+};
+
+const toggleSidebar = () => {
+  setIsSidebarOpen((prev) => !prev); // Toggle sidebar state
 };
 
   return (
     <div className="flex flex-col h-screen bg-black">
       <Navbar />
 
-      {/* Główny kontener czatu */}
+      {/* Main chat container */}
       <div className="flex-1 flex overflow-hidden pt-16">
-        {/* Lewy panel - lista czatów */}
-        <div className="w-64 bg-[#121212] border-r border-gray-800 flex flex-col h-full md:flex"> {/* Usunięto `hidden` */}
-          <div className="p-4">
-            <button
-              onClick={handleNewChat}
-              className="w-full flex items-center justify-center gap-2 bg-[#202020] hover:bg-[#282828] text-white py-2 px-4 rounded-md border border-gray-700"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              New chat
-            </button>
-          </div>
-
-          {/* Lista czatów */}
-          <div className="flex-1 overflow-y-auto px-2">
-            <div className="text-xs text-gray-500 px-3 py-2">Recent conversations</div>
-            {chats.map((chat) => (
+        {/* Left panel - chat list */}
+        {isSidebarOpen && (
+          <div className="w-64 bg-[#121212] border-r border-gray-800 flex flex-col h-full md:flex"> {/* Removed `hidden` */}
+            <div className="p-4">
               <button
-                key={chat.id}
-                className="w-full text-left px-3 py-2 rounded-md hover:bg-[#202020] text-white/80 my-1 flex items-center gap-2"
-                onClick={() => setCurrentChat(chat)}
+                onClick={handleNewChat}
+                className="w-full flex items-center justify-center gap-2 bg-[#202020] hover:bg-[#282828] text-white py-2 px-4 rounded-md border border-gray-700"
               >
                 <svg
+                  xmlns="http://www.w3.org/2000/svg"
                   width="16"
                   height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New chat
+              </button>
+            </div>
+
+            {/* Chat list */}
+            <div className="flex-1 overflow-y-auto px-2">
+              <div className="text-xs text-gray-500 px-3 py-2">Recent conversations</div>
+              {chats.map((chat) => (
+                <button
+                  key={chat.id}
+                  className="w-full text-left px-3 py-2 rounded-md hover:bg-[#202020] text-white/80 my-1 flex items-center gap-2"
+                  onClick={() => setCurrentChat(chat)}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                    ></path>
+                  </svg>
+                  <span className="truncate">{chat.conversation_title}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Main chat area */}
+        <div className="flex-1 flex flex-col bg-[#181818]">
+          {/* Sidebar toggle icon */}
+          <div
+            className={`absolute top-20 transition-all ${
+              isSidebarOpen ? 'left-70' : 'left-4'
+            } z-50`}
+          >
+            <button
+              onClick={toggleSidebar}
+              className="bg-[#202020] text-white p-2 rounded-md hover:bg-[#282828] transition-colors"
+            >
+              {isSidebarOpen ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
+                  strokeWidth="1.5"
                   stroke="currentColor"
+                  className="w-6 h-6"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                  ></path>
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
-                <span className="truncate">{chat.conversation_title}</span>
-              </button>
-            ))}
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.75 5.75h16.5M3.75 12h16.5M3.75 18.25h16.5"
+                  />
+                </svg>
+              )}
+            </button>
           </div>
-        </div>
 
-        {/* Główny obszar czatu */}
-        <div className="flex-1 flex flex-col bg-[#181818]">
-          {/* Wiadomości */}
+          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-white">
@@ -282,6 +354,13 @@ const handleSendMessage = async () => {
                 </div>
               ))
             )}
+            {previewMessage && (
+              <div className="flex justify-end">
+                <div className="max-w-[80%] p-3 rounded-lg bg-violet-300 text-white opacity-75">
+                  {previewMessage}
+                </div>
+              </div>
+            )}
             {isLoading && (
               <div className="flex justify-start">
                 <div className="max-w-[80%] p-3 rounded-lg bg-[#2e2e2e] text-white">
@@ -306,7 +385,7 @@ const handleSendMessage = async () => {
               <div className="bg-[#121212] p-6 rounded-lg w-96">
                 <h2 className="text-white text-lg font-bold mb-4">New chat settings</h2>
                 
-                {/* Wybór modelu */}
+                {/* Model selection */}
                 <label className="text-gray-400 block mb-2">Select model:</label>
                 <select
                   value={selectedModel}
@@ -319,7 +398,7 @@ const handleSendMessage = async () => {
                   <option value="openai">ChatGPT</option>
                 </select>
 
-                {/* Wybór promptów */}
+                {/* Prompt selection */}
                 <label className="text-gray-400 block mb-2">Select prompts:</label>
                 <div className="flex flex-col gap-2 mb-4">
                   {availablePrompts.map((prompt) => (
@@ -335,69 +414,102 @@ const handleSendMessage = async () => {
                   ))}
                 </div>
 
-                {/* Przyciski */}
+                {/* Buttons */}
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={() => setIsModalOpen(false)}
                     className="bg-gray-700 text-white px-4 py-2 rounded-md"
                   >
-                    Anuluj
+                    Cancel
                   </button>
                   <button
                     onClick={handleCreateChat}
                     className="bg-violet-500 text-white px-4 py-2 rounded-md"
                   >
-                    Utwórz
+                    Create
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Obszar wprowadzania wiadomości */}
+          {/* Message input area */}
           <div className="p-4 border-t border-gray-800 bg-[#181818]">
-            <div className="flex gap-2 max-w-4xl mx-auto">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Napisz wiadomość..."
-                className="flex-1 p-3 bg-[#2e2e2e] text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
-                disabled={isLoading}
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={isLoading || !input.trim()}
-                className="bg-violet-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-violet-600 transition-colors"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
+            <div className="flex flex-col gap-2 max-w-4xl mx-auto">
+              {/* Attached files list */}
+              <div className="flex flex-wrap gap-2">
+                {files.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 bg-[#2e2e2e] text-white px-3 py-2 rounded-md"
+                  >
+                    <span className="truncate max-w-[150px]">{file.name}</span>
+                    <button
+                      onClick={() => handleRemoveFile(index)}
+                      className="text-red-500 hover:text-red-700"
                     >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                  </span>
-                ) : (
-                  <span>Wyślij</span>
-                )}
-              </button>
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
+                  onClick={() => document.getElementById('file-input').click()}
+                >
+                  +
+                </button>
+                <input
+                  id="file-input"
+                  type="file"
+                  className="hidden"
+                  multiple
+                  onChange={handleFileChange}
+                />
+                <input
+                  type="text"
+                  value={input}
+                  onChange={handleInputChange}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Write a message..."
+                  className="flex-1 p-3 bg-[#2e2e2e] text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={isLoading || (!input.trim() && files.length === 0)}
+                  className="bg-violet-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-violet-600 transition-colors"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    </span>
+                  ) : (
+                    <span>Send</span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

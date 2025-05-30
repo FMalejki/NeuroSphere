@@ -10,9 +10,9 @@ const Navbar = () => {
   const { openSignIn } = useClerk();
 
   return (
-    <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-16 lg:px-32 py-5 text-white">
+    <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-2 md:px-4 lg:px-6 py-5 text-white">
       <div
-        className="font-bold text-2xl text-violet-300 tracking-wider cursor-pointer"
+        className="font-bold text-2xl text-violet-300 tracking-wider cursor-pointer pl-2"
         onClick={() => router.push('/')}
       >
         NeuroSphere
@@ -22,21 +22,11 @@ const Navbar = () => {
           Home
         </Link>
         <Link href="/all-products" className="hover:text-blue-300 transition">
-          Shop
+          Market
         </Link>
         <Link href="/chat" className="hover:text-blue-300 transition">
-          Chat AI
+          AI Chat
         </Link>
-
-        {/*}
-        {/* TODO: Add about us page }
-        <Link href="/" className="hover:text-blue-300 transition">
-          About Us
-        </Link>
-        {/* TODO: Add contact page }
-        <Link href="/" className="hover:text-blue-300 transition">
-          Contact
-        </Link>*/} 
 
         {isSeller && (
           <button
@@ -52,12 +42,12 @@ const Navbar = () => {
             onClick={() => router.push('/become-seller')}
             className="text-xs border border-white/30 hover:border-white px-6 py-2 rounded-full hover:bg-white/10 transition"
           >
-            Zostań sprzedawcą
+            Become seller
           </button>
         )}
       </div>
 
-      <div className="hidden md:flex items-center gap-4">
+      <div className="hidden md:flex items-center gap-4 pr-2">
         <button
           onClick={openSignIn}
           type="button"
