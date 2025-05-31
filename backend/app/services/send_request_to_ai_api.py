@@ -5,7 +5,7 @@ from app.models.prompt_model import PromptModel
 from app.services.openai_service import build_payload, parse_response
 from app.services.user_conversation_message_adder import add_message_to_conversation
 from app.services.openai_service import send_to_openai, send_to_gemini, send_to_hugging_face
-from app.handlers.file_handlers import handle_image, handle_text, handle_pdf, handle_zip, handle_default
+from app.handlers.file_handlers import handle_image, handle_text, handle_zip, handle_default
 
 #TODO: Refactor this so it works with photos and files
 async def send_request_to_ai_api(

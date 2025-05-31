@@ -159,7 +159,7 @@ const handleInputChange = (e) => {
 const handleSendMessage = async () => {
   if (!input.trim() && files.length === 0) return;
 
-  // Add user message to the list of messages
+  // Add user message to messages
   const userMessage = {
     id: Date.now(),
     content: input,
@@ -169,49 +169,147 @@ const handleSendMessage = async () => {
 
   setMessages((prev) => [...prev, userMessage]);
   setInput('');
-  setPreviewMessage(null); // Reset message preview
+  setPreviewMessage(null);
   setIsLoading(true);
 
   try {
+    // Validate required data
+    if (!user || !user.id) {
+      throw new Error('User ID is missing or invalid');
+    }
+    
+    if (!currentChat || !currentChat.id) {
+      throw new Error('Conversation ID is missing or invalid');
+    }
+
     const token = await getToken();
-    const formData = new FormData();
-    formData.append('user_message', input);
-    formData.append('user_id', user.id);
-    formData.append('conversation_id', currentChat.id);
-    formData.append('model_id', selectedModel);
-    formData.append('prompt_ids', JSON.stringify(selectedPrompts));
-    files.forEach((file, index) => {
-      formData.append(`files[${index}]`, file); // Add files to the request
-    });
+    
+    const requestData = {
+      user_message: input,
+      user_id: user.id,
+      conversation_id: currentChat.id,
+      model_id: currentChat.chosen_model || 'gemini', 
+      prompt_ids: currentChat.chosen_prompts || [],
+      files: [] 
+    };
+    
+    console.log('Sending request with data:', requestData);
+    const handleSendMessage = async () => {
+  if (!input.trim() && files.length === 0) return;
+
+  const userMessage = {
+    id: Date.now(),
+    content: input,
+    role: 'user',
+    timestamp: new Date(),
+  };
+
+  setMessages((prev) => [...prev, userMessage]);
+  setInput('');
+  setPreviewMessage(null);
+  setIsLoading(true);
+
+  try {
+    if (!user || !user.id) {
+      throw new Error('User ID is missing or invalid');
+    }
+    
+    if (!currentChat || !currentChat.id) {
+      throw new Error('Conversation ID is missing or invalid');
+    }
+
+    const token = await getToken();
+    
+
+    const requestData = {
+      user_message: input,
+      user_id: user.id,
+      conversation_id: currentChat.id,
+      model_id: currentChat.chosen_model || 'gemini', 
+      prompt_ids: currentChat.chosen_prompts || [],
+      files: [] 
+    };
+    
+    console.log('Sending request with data:', requestData);
+    // Add this in your component or in a useEffect
+    console.log('Current user:', user);
+    console.log('Current chat:', currentChat);
 
     const response = await fetch(`http://localhost:8000/prompt-request`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
-      body: formData,
+      body: JSON.stringify(requestData),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to send the message.');
+      const errorText = await response.text();
+      console.error('Server error:', errorText);
+      throw new Error('Failed to send the message');
     }
 
-    // Receive response from backend
     const data = await response.json();
+    
+    if (!data || !data.response || !data.response.response) {
+      console.error('Invalid response format:', data);
+      throw new Error('Received invalid response from server');
+    }
+    
     const botResponse = {
       id: Date.now() + 1,
-      content: data.response.response, 
+      content: data.response.response,
       role: 'assistant',
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, botResponse]);
   } catch (err) {
-    console.error('Error while sending the message:', err.message);
+    console.error('Error while sending the message:', err);
     alert('An error occurred while sending the message.');
   } finally {
     setIsLoading(false);
-    setFiles([]); // Reset file list after sending
+    setFiles([]);
+  }
+};
+
+    const response = await fetch(`http://localhost:8000/prompt-request`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Server error:', errorText);
+      throw new Error('Failed to send the message');
+    }
+
+    const data = await response.json();
+    
+    if (!data || !data.response || !data.response.response) {
+      console.error('Invalid response format:', data);
+      throw new Error('Received invalid response from server');
+    }
+    
+    const botResponse = {
+      id: Date.now() + 1,
+      content: data.response.response,
+      role: 'assistant',
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, botResponse]);
+  } catch (err) {
+    console.error('Error while sending the message:', err);
+    alert('An error occurred while sending the message.');
+  } finally {
+    setIsLoading(false);
+    setFiles([]);
   }
 };
 

@@ -6,7 +6,6 @@ import io
 import zipfile
 from typing import List, Any, Dict
 
-from PyPDF2 import PdfReader
 
 def handle_image(f:Any , content: List[Dict[str, Any]]) -> None:
     """
@@ -30,16 +29,16 @@ def handle_text(f: Any, content: List[Dict[str, Any]]) -> None:
     content[0]["text"] += f"\n\nAttached file `{f.info.name}` content:\n{file_text[:2000]}"
 
 
-def handle_pdf(f: Any, content: List[Dict[str, Any]]) -> None:
-    """
-    Handles PDF files by extracting text from them and appending it to the content of the request
-    """
-    file_bytes = base64.b64decode(f.data)
-    pdf_reader = PdfReader(io.BytesIO(file_bytes))
-    pdf_text = ""
-    for page in pdf_reader.pages:
-        pdf_text += page.extract_text() or ""
-    content[0]["text"] += f"\n\nAttached PDF `{f.info.name}` content:\n{pdf_text[:2000]}"
+# def handle_pdf(f: Any, content: List[Dict[str, Any]]) -> None:
+#     """
+#     Handles PDF files by extracting text from them and appending it to the content of the request
+#     """
+#     file_bytes = base64.b64decode(f.data)
+#     pdf_reader = PdfReader(io.BytesIO(file_bytes))
+#     pdf_text = ""
+#     for page in pdf_reader.pages:
+#         pdf_text += page.extract_text() or ""
+#     content[0]["text"] += f"\n\nAttached PDF `{f.info.name}` content:\n{pdf_text[:2000]}"
 
 
 def handle_zip(f: Any, content: List[Dict[str, Any]]) -> None:
