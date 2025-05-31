@@ -41,17 +41,79 @@ const Product = () => {
       <div className="px-6 md:px-12 lg:px-20 pt-20 space-y-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Lewy panel - wykres TradingView */}
-          <div className="col-span-2 bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 h-full">
-            {/* Zmieniono wysokość kontenera na `h-full`, aby dopasować do ramki "Product Data" */}
-            <h2 className="text-xl font-medium text-white mb-4">Price Chart</h2>
+          <div className="col-span-2 bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 h-[600px]">
+            {/* Stała wysokość kontenera na `h-[600px]` */}
+            {/*<h2 className="text-xl font-medium text-white mb-4">Price Chart</h2>*/}
             <div className="h-[560px]">
-              {/* Wysokość wykresu pozostawiono bez zmian */}
+              {/* Stała wysokość wykresu na `h-[560px]` */}
               <TradingViewWidget />
             </div>
           </div>
 
           {/* Prawy panel - dane produktu */}
           <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20">
+            {/* Sekcja przycisków na samej górze */}
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setActiveButton('buy')}
+                  className={`w-full py-3 ${
+                    activeButton === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600'
+                  } text-white transition rounded-lg`}
+                >
+                  Buy
+                </button>
+                <button
+                  onClick={() => setActiveButton('sell')}
+                  className={`w-full py-3 ${
+                    activeButton === 'sell' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600'
+                  } text-white transition rounded-lg`}
+                >
+                  Sell
+                </button>
+              </div>
+              {/* Pole do wpisywania wolumenu */}
+              <input
+                type="text"
+                value={volume === 0 ? '' : volume}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*$/.test(value)) {
+                    setVolume(Number(value));
+                  }
+                }}
+                className="w-full p-2 border border-gray-700 rounded-lg bg-gray-800 text-white"
+                placeholder="0"
+              />
+              {/* Przycisk Confirm */}
+              <button
+                onClick={() => {
+                  if (volume > 0) {
+                    console.log("order:", productData);
+                    console.log("amount: ", productData.offerPrice * volume);
+                    console.log("seller_id: ", productData.userId);
+                    console.log("user_id: ", user.id);
+                    console.log("product_id: ", productData._id);
+                    handlePurchaseWithFee(
+                      productData.offerPrice * volume,
+                      productData.userId,
+                      user.id,
+                      productData._id,
+                      productData.name
+                    );
+                  }
+                }}
+                className={`w-full py-3 ${
+                  volume > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600'
+                } text-white transition rounded-lg`}
+                disabled={volume <= 0}
+              >
+                Confirm
+              </button>
+            </div>
+            {/* Separator */}
+            <hr className="border-gray-700 my-6" />
+            {/* Reszta sekcji "Product Data" */}
             <div className="flex items-start justify-between mb-4">
               {/* Zdjęcie w lewym górnym rogu */}
               <div className="rounded-xl overflow-hidden bg-gray-800/30 border border-blue-500/20 w-[120px] h-[120px]">
@@ -98,7 +160,6 @@ const Product = () => {
                 </div>
               </div>
             </div>
-            {/* Reszta sekcji "Product Data" */}
             <p className="text-gray-300 mt-3">{productData.description}</p>
             <p className="text-2xl font-medium mt-6 text-white">
               {productData.offerPrice}{' '}
@@ -130,131 +191,11 @@ const Product = () => {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center mt-10 gap-4">
-              <button
-                onClick={() => setActiveButton('buy')}
-                className={`w-full py-3 ${
-                  activeButton === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600'
-                } text-white transition rounded-lg`}
-              >
-                Buy
-              </button>
-              <button
-                onClick={() => setActiveButton('sell')}
-                className={`w-full py-3 ${
-                  activeButton === 'sell' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600'
-                } text-white transition rounded-lg`}
-              >
-                Sell
-              </button>
-            </div>
-            {/* Pole do wpisywania wolumenu */}
-            <div className="mt-4">
-              <input
-                type="text"
-                value={volume === 0 ? '' : volume} // if0 =empty
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (/^\d*$/.test(value))
-                  { // czy naki to cyfry
-                    setVolume(Number(value));
-                  }
-                }}
-                className="w-full p-2 border border-gray-700 rounded-lg bg-gray-800 text-white"
-                placeholder="0" 
-              />
-            </div>
-            {/* Przycisk Confirm */}
-            <div className="mt-4">
-              <button
-                onClick={() => {
-                  if (volume > 0) {
-                    console.log("order:", productData);
-                    console.log("amount: ", productData.offerPrice * volume);
-                    console.log("seller_id: ", productData.userId);
-                    console.log("user_id: ", user.id);
-                    console.log("product_id: ", productData._id);
-                    handlePurchaseWithFee(
-                      productData.offerPrice * volume,
-                      productData.userId,
-                      user.id,
-                      productData._id,
-                      productData.name
-                    );
-                  }
-                }}
-                className={`w-full py-3 ${
-                  volume > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600'
-                } text-white transition rounded-lg`}
-                disabled={volume <= 0}
-              >
-                Confirm
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Nowa sekcja z trzema kolumnami */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
-          {/* Sekcja komentarzy */}
-          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20">
-            <h2 className="text-xl font-medium text-white mb-4">Discussion</h2>
-            <div className="space-y-4">
-              {/* Wyświetlanie komentarzy */}
-              {comments.slice(0, showAllComments ? comments.length : 3).map((comment, index) => (
-                <div key={index} className="bg-gray-800 p-4 rounded-lg">
-                  <p className="text-white">{comment}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <button className="text-green-400">👍</button>
-                    <button className="text-red-400">👎</button>
-                    <button className="text-blue-400">Reply</button>
-                  </div>
-                </div>
-              ))}
-              {/* Przycisk "See more comments" */}
-              {comments.length > 3 && !showAllComments && (
-                <button
-                  onClick={() => setShowAllComments(true)}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-                >
-                  See more comments
-                </button>
-              )}
-              {/* Pole do dodawania komentarzy */}
-              <textarea
-                className="w-full p-2 bg-gray-800 text-white rounded-lg"
-                placeholder="Write a comment..."
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAddComment(e.target.value);
-                    e.target.value = '';
-                  }
-                }}
-              ></textarea>
-              <button
-                onClick={() => {
-                  const textarea = document.querySelector('textarea');
-                  handleAddComment(textarea.value);
-                  textarea.value = '';
-                }}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-              >
-                Add Comment
-              </button>
-            </div>
-          </div>
-
-          {/* Sekcja transakcji */}
-          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20">
-            <h2 className="text-xl font-medium text-white mb-4">Recent Transactions</h2>
-            <ul className="space-y-2">
-              <li className="text-white">User1 bought 2 SOL</li>
-              <li className="text-white">User2 sold 1.5 SOL</li>
-              <li className="text-white">User3 bought 3 SOL</li>
-            </ul>
-          </div>
-
+        {/* Sekcje "Top Holders" i "Recent Transactions" obok siebie */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
           {/* Sekcja top holders */}
           <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 h-[300px] overflow-y-auto">
             <h2 className="text-xl font-medium text-white mb-4">Top Holders</h2>
@@ -270,6 +211,65 @@ const Product = () => {
               <li className="text-white">Holder9 - 1%</li>
               <li className="text-white">Holder10 - 1%</li>
             </ul>
+          </div>
+
+          {/* Sekcja transakcji */}
+          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20">
+            <h2 className="text-xl font-medium text-white mb-4">Recent Transactions</h2>
+            <ul className="space-y-2">
+              <li className="text-white">User1 bought 2 SOL</li>
+              <li className="text-white">User2 sold 1.5 SOL</li>
+              <li className="text-white">User3 bought 3 SOL</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Sekcja "Discussion" na dole */}
+        <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 mt-10">
+          <h2 className="text-xl font-medium text-white mb-4">Discussion</h2>
+          <div className="space-y-4">
+            {/* Wyświetlanie komentarzy */}
+            {comments.slice(0, showAllComments ? comments.length : 3).map((comment, index) => (
+              <div key={index} className="bg-gray-800 p-4 rounded-lg">
+                <p className="text-white">{comment}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <button className="text-green-400">👍</button>
+                  <button className="text-red-400">👎</button>
+                  <button className="text-blue-400">Reply</button>
+                </div>
+              </div>
+            ))}
+            {/* Przycisk "See more comments" */}
+            {comments.length > 3 && !showAllComments && (
+              <button
+                onClick={() => setShowAllComments(true)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+              >
+                See more comments
+              </button>
+            )}
+            {/* Pole do dodawania komentarzy */}
+            <textarea
+              className="w-full p-2 bg-gray-800 text-white rounded-lg"
+              placeholder="Write a comment..."
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAddComment(e.target.value);
+                  e.target.value = '';
+                }
+              }}
+            ></textarea>
+            <button
+              onClick={() => {
+                const textarea = document.querySelector('textarea');
+                handleAddComment(textarea.value);
+                textarea.value = '';
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+            >
+              Add Comment
+            </button>
           </div>
         </div>
 
