@@ -24,23 +24,21 @@ async def send_request_to_ai_api(
     try:
         print("inside send_request_to_ai_api")
 
-        # Structure that will store our request
         content = [{"type": "text", "text": user_message}]
 
-        # Flag to track if we have images
         has_images = False
+        file_count = 0
         
-        # Including files in the request. If files are provided.
         if files:
             print(f"Processing {len(files)} files")
             for f in files:
                 try:
-                    # Get info from file dictionary
+                    file_count += 1
                     info = f.get("info", {})
                     file_type = info.get("type", "")
-                    print(f"Processing file of type: {file_type}")
+                    file_name = info.get("name", f"file-{file_count}")
+                    print(f"Processing file {file_name} of type: {file_type}")
                     
-                    # Process based on file type
                     if file_type.startswith("image/"):
                         handle_image(f, content)
                         has_images = True
@@ -53,36 +51,32 @@ async def send_request_to_ai_api(
                 except Exception as e:
                     print(f"Error processing file: {str(e)}")
 
-        # Create the full text prompt
         full_prompt = "\n\n".join([prompt.text for prompt in prompts_data]) + f"\n\n{user_message}"
         print(f"Full prompt: {full_prompt}")
         
-        # Add user message to conversation
         asyncio.create_task(add_message_to_conversation(conversation_id, user_message, "user"))
         
-        # Route to appropriate AI service based on model and content
         if model_info == "openai":
-            if has_images:
-                print("Sending to OpenAI with images")
+            if has_images or file_count > 0:
+                print(f"Sending to OpenAI with {file_count} files (including {has_images} images)")
                 response = send_to_openai_with_images(content, conversation_id, user_id)
             else:
                 response = send_to_openai(full_prompt, conversation_id, user_id)
                 
         elif model_info == "gemini":
-            if has_images:
-                print("Sending to Gemini with images")
+            if has_images or file_count > 0:
+                print(f"Sending to Gemini with {file_count} files (including {has_images} images)")
                 response = send_to_gemini_with_images(content, full_prompt, conversation_id, user_id)
             else:
                 response = send_to_gemini(full_prompt, conversation_id, user_id)
                 
         elif model_info == "huggingface":
-            # Huggingface doesn't support images in the same way
-            response = send_to_hugging_face(full_prompt, conversation_id, user_id)
+
+            response = send_to_hugsging_face(full_prompt, conversation_id, user_id)
             
         else:
             raise ValueError(f"Invalid API choice: {model_info}")
 
-        # Return the response
         return {
             "response": response,
         }
