@@ -197,7 +197,7 @@ const Product = () => {
         {/* Sekcje "Top Holders" i "Recent Transactions" obok siebie */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
           {/* Sekcja top holders */}
-          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 h-[300px] overflow-y-auto">
+          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 h-[400px]">
             <h2 className="text-xl font-medium text-white mb-4">Top Holders</h2>
             <ul className="space-y-2">
               <li className="text-white">Holder1 - 10%</li>
@@ -214,12 +214,19 @@ const Product = () => {
           </div>
 
           {/* Sekcja transakcji */}
-          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20">
+          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 h-[400px] overflow-y-auto">
             <h2 className="text-xl font-medium text-white mb-4">Recent Transactions</h2>
             <ul className="space-y-2">
               <li className="text-white">User1 bought 2 SOL</li>
               <li className="text-white">User2 sold 1.5 SOL</li>
               <li className="text-white">User3 bought 3 SOL</li>
+              <li className="text-white">User4 sold 0.5 SOL</li>
+              <li className="text-white">User5 bought 1 SOL</li>
+              <li className="text-white">User6 sold 2 SOL</li>
+              <li className="text-white">User7 bought 4 SOL</li>
+              <li className="text-white">User8 sold 3 SOL</li>
+              <li className="text-white">User9 bought 5 SOL</li>
+              <li className="text-white">User10 sold 1 SOL</li>
             </ul>
           </div>
         </div>
