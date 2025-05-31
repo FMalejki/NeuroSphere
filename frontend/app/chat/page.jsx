@@ -156,6 +156,31 @@ const handleInputChange = (e) => {
   setPreviewMessage(e.target.value); // Update message preview
 };
 
+// Add this function to your Chat component
+const convertFilesToBase64 = async (fileList) => {
+  const fileObjects = [];
+  
+  for (const file of fileList) {
+    const base64Data = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result.split(',')[1]); // Extract base64 data
+      reader.readAsDataURL(file);
+    });
+    
+    fileObjects.push({
+      info: {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      },
+      data: base64Data
+    });
+  }
+  
+  return fileObjects;
+};
+
+// Update your handleSendMessage function
 const handleSendMessage = async () => {
   if (!input.trim() && files.length === 0) return;
 
@@ -184,56 +209,23 @@ const handleSendMessage = async () => {
 
     const token = await getToken();
     
+    // Convert files to base64 format expected by the backend
+    const processedFiles = await convertFilesToBase64(files);
+    
+    // Prepare request data
     const requestData = {
       user_message: input,
       user_id: user.id,
       conversation_id: currentChat.id,
       model_id: currentChat.chosen_model || 'gemini', 
       prompt_ids: currentChat.chosen_prompts || [],
-      files: [] 
+      files: processedFiles 
     };
     
-    console.log('Sending request with data:', requestData);
-    const handleSendMessage = async () => {
-  if (!input.trim() && files.length === 0) return;
-
-  const userMessage = {
-    id: Date.now(),
-    content: input,
-    role: 'user',
-    timestamp: new Date(),
-  };
-
-  setMessages((prev) => [...prev, userMessage]);
-  setInput('');
-  setPreviewMessage(null);
-  setIsLoading(true);
-
-  try {
-    if (!user || !user.id) {
-      throw new Error('User ID is missing or invalid');
-    }
-    
-    if (!currentChat || !currentChat.id) {
-      throw new Error('Conversation ID is missing or invalid');
-    }
-
-    const token = await getToken();
-    
-
-    const requestData = {
-      user_message: input,
-      user_id: user.id,
-      conversation_id: currentChat.id,
-      model_id: currentChat.chosen_model || 'gemini', 
-      prompt_ids: currentChat.chosen_prompts || [],
-      files: [] 
-    };
-    
-    console.log('Sending request with data:', requestData);
-    // Add this in your component or in a useEffect
-    console.log('Current user:', user);
-    console.log('Current chat:', currentChat);
+    console.log('Sending request with data:', {
+      ...requestData,
+      files: `${processedFiles.length} files` 
+    });
 
     const response = await fetch(`http://localhost:8000/prompt-request`, {
       method: 'POST',
@@ -273,46 +265,6 @@ const handleSendMessage = async () => {
     setFiles([]);
   }
 };
-
-    const response = await fetch(`http://localhost:8000/prompt-request`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(requestData),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Server error:', errorText);
-      throw new Error('Failed to send the message');
-    }
-
-    const data = await response.json();
-    
-    if (!data || !data.response || !data.response.response) {
-      console.error('Invalid response format:', data);
-      throw new Error('Received invalid response from server');
-    }
-    
-    const botResponse = {
-      id: Date.now() + 1,
-      content: data.response.response,
-      role: 'assistant',
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, botResponse]);
-  } catch (err) {
-    console.error('Error while sending the message:', err);
-    alert('An error occurred while sending the message.');
-  } finally {
-    setIsLoading(false);
-    setFiles([]);
-  }
-};
-
 const toggleSidebar = () => {
   setIsSidebarOpen((prev) => !prev); // Toggle sidebar state
 };
