@@ -26,18 +26,19 @@ async def connect_to_mongo():
 async def create_conversation_in_db(conversation_data: dict) -> Conversation:
     conversation_collection = await connect_to_mongo()
     try:
-        #result = await conversation_collection.insert_one(conversation_data)
-        #await conversation_collection.find_one({"_id": result.inserted_id})
+        # Add a default title if not provided
+        if "conversation_title" not in conversation_data:
+            conversation_data["conversation_title"] = f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        
         result = await conversation_collection.insert_one(conversation_data)
-
         created_conversation = await conversation_collection.find_one({"_id": result.inserted_id})
+        
         return Conversation(
             id=str(created_conversation["_id"]),
             user_id=created_conversation["user_id"],
             chosen_model=created_conversation["chosen_model"],
             chosen_prompts=created_conversation["chosen_prompts"],
-            #conversation_title=created_conversation["conversation_title"], #do stworzenia
-            conversation_title="Default_Titl", #Placeholder
+            conversation_title=created_conversation.get("conversation_title", "New Chat"),
             parameters=created_conversation["parameters"],
             messages=[],
         )
@@ -52,15 +53,27 @@ async def get_conversation_info(user_id: str):
         cursor = conversation_collection.find({"user_id": user_id})
         conversations = []
         async for document in cursor:
-            conversations.append(document)
-            print(document)
-
+            # Format each document to match what the frontend expects
+            formatted_conversation = {
+                "id": str(document["_id"]),
+                "user_id": document["user_id"],
+                "chosen_model": document["chosen_model"],
+                "chosen_prompts": document["chosen_prompts"],
+                # Set a default title if not present
+                "conversation_title": document.get("conversation_title", "Chat " + str(len(conversations) + 1)),
+                "parameters": document.get("parameters", {}),
+                "messages": document.get("messages", [])
+            }
+            conversations.append(formatted_conversation)
+            print(f"Formatted conversation: {formatted_conversation}")
 
         if not conversations:
-            raise ValueError("No conversations found")
+            print(f"No conversations found for user ID: {user_id}")
+            return []  # Return empty array instead of raising error
         
         return conversations
     except Exception as e:
+        print(f"Error while fetching conversation info: {e}")
         raise RuntimeError(f"Error while fetching conversation info: {e}")
     
 

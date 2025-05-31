@@ -156,10 +156,35 @@ const handleInputChange = (e) => {
   setPreviewMessage(e.target.value); // Update message preview
 };
 
+// Add this function to your Chat component
+const convertFilesToBase64 = async (fileList) => {
+  const fileObjects = [];
+  
+  for (const file of fileList) {
+    const base64Data = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result.split(',')[1]); // Extract base64 data
+      reader.readAsDataURL(file);
+    });
+    
+    fileObjects.push({
+      info: {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      },
+      data: base64Data
+    });
+  }
+  
+  return fileObjects;
+};
+
+// Update your handleSendMessage function
 const handleSendMessage = async () => {
   if (!input.trim() && files.length === 0) return;
 
-  // Add user message to the list of messages
+  // Add user message to messages
   const userMessage = {
     id: Date.now(),
     content: input,
@@ -169,52 +194,77 @@ const handleSendMessage = async () => {
 
   setMessages((prev) => [...prev, userMessage]);
   setInput('');
-  setPreviewMessage(null); // Reset message preview
+  setPreviewMessage(null);
   setIsLoading(true);
 
   try {
+    // Validate required data
+    if (!user || !user.id) {
+      throw new Error('User ID is missing or invalid');
+    }
+    
+    if (!currentChat || !currentChat.id) {
+      throw new Error('Conversation ID is missing or invalid');
+    }
+
     const token = await getToken();
-    const formData = new FormData();
-    formData.append('user_message', input);
-    formData.append('user_id', user.id);
-    formData.append('conversation_id', currentChat.id);
-    formData.append('model_id', selectedModel);
-    formData.append('prompt_ids', JSON.stringify(selectedPrompts));
-    files.forEach((file, index) => {
-      formData.append(`files[${index}]`, file); // Add files to the request
+    
+    // Convert files to base64 format expected by the backend
+    const processedFiles = await convertFilesToBase64(files);
+    
+    // Prepare request data
+    const requestData = {
+      user_message: input,
+      user_id: user.id,
+      conversation_id: currentChat.id,
+      model_id: currentChat.chosen_model || 'gemini', 
+      prompt_ids: currentChat.chosen_prompts || [],
+      files: processedFiles 
+    };
+    
+    console.log('Sending request with data:', {
+      ...requestData,
+      files: `${processedFiles.length} files` 
     });
 
     const response = await fetch(`http://localhost:8000/prompt-request`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
-      body: formData,
+      body: JSON.stringify(requestData),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to send the message.');
+      const errorText = await response.text();
+      console.error('Server error:', errorText);
+      throw new Error('Failed to send the message');
     }
 
-    // Receive response from backend
     const data = await response.json();
+    
+    if (!data || !data.response || !data.response.response) {
+      console.error('Invalid response format:', data);
+      throw new Error('Received invalid response from server');
+    }
+    
     const botResponse = {
       id: Date.now() + 1,
-      content: data.response.response, 
+      content: data.response.response,
       role: 'assistant',
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, botResponse]);
   } catch (err) {
-    console.error('Error while sending the message:', err.message);
+    console.error('Error while sending the message:', err);
     alert('An error occurred while sending the message.');
   } finally {
     setIsLoading(false);
-    setFiles([]); // Reset file list after sending
+    setFiles([]);
   }
 };
-
 const toggleSidebar = () => {
   setIsSidebarOpen((prev) => !prev); // Toggle sidebar state
 };
