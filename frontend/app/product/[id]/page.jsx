@@ -9,6 +9,7 @@ import Loading from '@/components/Loading';
 import { useAppContext } from '@/context/AppContext';
 import React from 'react';
 import { handlePurchaseWithFee } from '@/models/Payments';
+import TradingViewWidget from '@/components/TradingViewWidget'; // Import TradingViewWidget
 
 const Product = () => {
   const { id } = useParams();
@@ -16,6 +17,10 @@ const Product = () => {
   const [mainImage, setMainImage] = useState(null);
   const [productData, setProductData] = useState(null);
   const { user } = useAppContext();
+  const [comments, setComments] = useState([]); // State for comments
+  const [showAllComments, setShowAllComments] = useState(false); // State for toggling comments visibility
+  const [activeButton, setActiveButton] = useState('buy'); // Dodano stan dla aktywnego przycisku
+  const [volume, setVolume] = useState(0); // Dodano stan dla wolumenu
 
   const fetchProductData = async () => {
     const product = products.find((product) => product._id === id);
@@ -27,80 +32,75 @@ const Product = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, products.length]);
 
+  const handleAddComment = (newComment) => {
+    setComments((prev) => [...prev, newComment]); // Add new comment to the list
+  };
+
   return productData ? (
     <Layout>
-      <div className="px-6 md:px-16 lg:px-32 pt-20 space-y-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-          <div className="px-5 lg:px-16 xl:px-20">
-            <div className="rounded-xl overflow-hidden bg-gray-800/30 mb-4 border border-blue-500/20">
-              <Image
-                src={mainImage || productData.images[0]}
-                alt={productData.name}
-                className="w-full h-auto object-contain p-4"
-                width={1280}
-                height={720}
-              />
-            </div>
-
-            <div className="grid grid-cols-4 gap-4">
-              {productData.images.map((image, index) => (
-                <div
-                  key={index}
-                  onClick={() => setMainImage(image)}
-                  className={`cursor-pointer rounded-lg overflow-hidden bg-gray-800/30 border ${
-                    mainImage === image || (!mainImage && index === 0)
-                      ? 'border-blue-500'
-                      : 'border-blue-500/20'
-                  } hover:border-blue-500 transition-colors`}
-                >
-                  <Image
-                    src={image}
-                    alt={`${productData.name} - view ${index + 1}`}
-                    className="w-full h-auto object-contain p-2"
-                    width={640}
-                    height={640}
-                  />
-                </div>
-              ))}
+      <div className="px-6 md:px-12 lg:px-20 pt-20 space-y-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Lewy panel - wykres TradingView */}
+          <div className="col-span-2 bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 h-full">
+            {/* Zmieniono wysokość kontenera na `h-full`, aby dopasować do ramki "Product Data" */}
+            <h2 className="text-xl font-medium text-white mb-4">Price Chart</h2>
+            <div className="h-[560px]">
+              {/* Wysokość wykresu pozostawiono bez zmian */}
+              <TradingViewWidget />
             </div>
           </div>
 
-          <div className="flex flex-col bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20">
-            <h1 className="text-3xl font-medium text-white mb-4">
-              {productData.name}
-            </h1>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex items-center gap-0.5">
+          {/* Prawy panel - dane produktu */}
+          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20">
+            <div className="flex items-start justify-between mb-4">
+              {/* Zdjęcie w lewym górnym rogu */}
+              <div className="rounded-xl overflow-hidden bg-gray-800/30 border border-blue-500/20 w-[120px] h-[120px]">
                 <Image
-                  className="h-4 w-4"
-                  src={assets.star_icon}
-                  alt="star_icon"
-                />
-                <Image
-                  className="h-4 w-4"
-                  src={assets.star_icon}
-                  alt="star_icon"
-                />
-                <Image
-                  className="h-4 w-4"
-                  src={assets.star_icon}
-                  alt="star_icon"
-                />
-                <Image
-                  className="h-4 w-4"
-                  src={assets.star_icon}
-                  alt="star_icon"
-                />
-                <Image
-                  className="h-4 w-4"
-                  src={assets.star_dull_icon}
-                  alt="star_dull_icon"
+                  src={mainImage || productData.images[0]}
+                  alt={productData.name}
+                  className="w-full h-full object-cover"
+                  width={120}
+                  height={120}
                 />
               </div>
-              <p className="text-gray-300">(4.5)</p>
+              {/* Nazwa i ocena w prawym górnym rogu */}
+              <div className="text-right">
+                <h1 className="text-2xl font-medium text-white">{productData.name}</h1>
+                <div className="flex items-center justify-end gap-2 mt-2">
+                  <div className="flex items-center gap-0.5">
+                    <Image
+                      className="h-4 w-4"
+                      src={assets.star_icon}
+                      alt="star_icon"
+                    />
+                    <Image
+                      className="h-4 w-4"
+                      src={assets.star_icon}
+                      alt="star_icon"
+                    />
+                    <Image
+                      className="h-4 w-4"
+                      src={assets.star_icon}
+                      alt="star_icon"
+                    />
+                    <Image
+                      className="h-4 w-4"
+                      src={assets.star_icon}
+                      alt="star_icon"
+                    />
+                    <Image
+                      className="h-4 w-4"
+                      src={assets.star_dull_icon}
+                      alt="star_dull_icon"
+                    />
+                  </div>
+                  <p className="text-gray-300">(4.5)</p>
+                </div>
+              </div>
             </div>
+            {/* Reszta sekcji "Product Data" */}
             <p className="text-gray-300 mt-3">{productData.description}</p>
-            <p className="text-3xl font-medium mt-6 text-white">
+            <p className="text-2xl font-medium mt-6 text-white">
               {productData.offerPrice}{' '}
               <span className="text-blue-400">SOL</span>
               <span className="text-base font-normal text-gray-400 line-through ml-2">
@@ -130,37 +130,149 @@ const Product = () => {
                 </tbody>
               </table>
             </div>
-
             <div className="flex items-center mt-10 gap-4">
               <button
-                onClick={() => addToCart(productData._id)}
-                className="w-full py-3.5 bg-gray-800 text-white hover:bg-gray-700 transition rounded-lg border border-blue-500/20"
+                onClick={() => setActiveButton('buy')}
+                className={`w-full py-3 ${
+                  activeButton === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600'
+                } text-white transition rounded-lg`}
               >
-                Add to Cart
+                Buy
               </button>
               <button
-                onClick={() => {
-                  console.log("order:", productData)
-                  console.log("amount: ", productData.offerPrice)
-                  console.log("seller_id: ", productData.userId)
-                  console.log("user_id: ", user.id)
-                  console.log("product_id: ", productData._id)
-                  handlePurchaseWithFee(
-                  productData.offerPrice,  
-                  productData.userId, 
-                  user.id, 
-                  productData._id,
-                  productData.name
-                  )
-                }
-                }
-                className="w-full py-3.5 bg-blue-600 text-white hover:bg-blue-700 transition rounded-lg"
+                onClick={() => setActiveButton('sell')}
+                className={`w-full py-3 ${
+                  activeButton === 'sell' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600'
+                } text-white transition rounded-lg`}
               >
-                Buy Now
+                Sell
+              </button>
+            </div>
+            {/* Pole do wpisywania wolumenu */}
+            <div className="mt-4">
+              <input
+                type="text"
+                value={volume === 0 ? '' : volume} // if0 =empty
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*$/.test(value))
+                  { // czy naki to cyfry
+                    setVolume(Number(value));
+                  }
+                }}
+                className="w-full p-2 border border-gray-700 rounded-lg bg-gray-800 text-white"
+                placeholder="0" 
+              />
+            </div>
+            {/* Przycisk Confirm */}
+            <div className="mt-4">
+              <button
+                onClick={() => {
+                  if (volume > 0) {
+                    console.log("order:", productData);
+                    console.log("amount: ", productData.offerPrice * volume);
+                    console.log("seller_id: ", productData.userId);
+                    console.log("user_id: ", user.id);
+                    console.log("product_id: ", productData._id);
+                    handlePurchaseWithFee(
+                      productData.offerPrice * volume,
+                      productData.userId,
+                      user.id,
+                      productData._id,
+                      productData.name
+                    );
+                  }
+                }}
+                className={`w-full py-3 ${
+                  volume > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600'
+                } text-white transition rounded-lg`}
+                disabled={volume <= 0}
+              >
+                Confirm
               </button>
             </div>
           </div>
         </div>
+
+        {/* Nowa sekcja z trzema kolumnami */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
+          {/* Sekcja komentarzy */}
+          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20">
+            <h2 className="text-xl font-medium text-white mb-4">Discussion</h2>
+            <div className="space-y-4">
+              {/* Wyświetlanie komentarzy */}
+              {comments.slice(0, showAllComments ? comments.length : 3).map((comment, index) => (
+                <div key={index} className="bg-gray-800 p-4 rounded-lg">
+                  <p className="text-white">{comment}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <button className="text-green-400">👍</button>
+                    <button className="text-red-400">👎</button>
+                    <button className="text-blue-400">Reply</button>
+                  </div>
+                </div>
+              ))}
+              {/* Przycisk "See more comments" */}
+              {comments.length > 3 && !showAllComments && (
+                <button
+                  onClick={() => setShowAllComments(true)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+                >
+                  See more comments
+                </button>
+              )}
+              {/* Pole do dodawania komentarzy */}
+              <textarea
+                className="w-full p-2 bg-gray-800 text-white rounded-lg"
+                placeholder="Write a comment..."
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddComment(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+              ></textarea>
+              <button
+                onClick={() => {
+                  const textarea = document.querySelector('textarea');
+                  handleAddComment(textarea.value);
+                  textarea.value = '';
+                }}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+              >
+                Add Comment
+              </button>
+            </div>
+          </div>
+
+          {/* Sekcja transakcji */}
+          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20">
+            <h2 className="text-xl font-medium text-white mb-4">Recent Transactions</h2>
+            <ul className="space-y-2">
+              <li className="text-white">User1 bought 2 SOL</li>
+              <li className="text-white">User2 sold 1.5 SOL</li>
+              <li className="text-white">User3 bought 3 SOL</li>
+            </ul>
+          </div>
+
+          {/* Sekcja top holders */}
+          <div className="bg-gray-900/40 backdrop-blur-sm p-6 rounded-xl border border-blue-500/20 h-[300px] overflow-y-auto">
+            <h2 className="text-xl font-medium text-white mb-4">Top Holders</h2>
+            <ul className="space-y-2">
+              <li className="text-white">Holder1 - 10%</li>
+              <li className="text-white">Holder2 - 8%</li>
+              <li className="text-white">Holder3 - 5%</li>
+              <li className="text-white">Holder4 - 4%</li>
+              <li className="text-white">Holder5 - 3%</li>
+              <li className="text-white">Holder6 - 2%</li>
+              <li className="text-white">Holder7 - 2%</li>
+              <li className="text-white">Holder8 - 1%</li>
+              <li className="text-white">Holder9 - 1%</li>
+              <li className="text-white">Holder10 - 1%</li>
+            </ul>
+          </div>
+        </div>
+
         <div className="flex flex-col items-center">
           <div className="flex flex-col items-center mb-4 mt-16">
             <p className="text-3xl font-medium text-white">
