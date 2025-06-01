@@ -15,6 +15,7 @@ const Chat = () => {
   const [files, setFiles] = useState([]); // Changed to an array of files
   const [previewMessage, setPreviewMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingConversations, setLoadingConversations] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Added state for sidebar toggle
   const messagesEndRef = useRef(null);
   const [chats, setChats] = useState([]);
@@ -23,10 +24,28 @@ const Chat = () => {
   const [selectedPrompts, setSelectedPrompts] = useState([]);
   const [availablePrompts, setAvailablePrompts] = useState([]);
   const [currentChat, setCurrentChat] = useState(null);
-  useEffect(() => {
-    // Fetch user conversations on component load
+  const [chatTitle, setChatTitle] = useState('');
+
+useEffect(() => {
+  if (currentChat) {
+    // Set messages from the selected chat
+    const formattedMessages = currentChat.messages.map((msg, index) => ({
+      id: index,
+      content: msg.content,
+      role: msg.role,
+      timestamp: new Date(msg.timestamp)
+    }));
+    setMessages(formattedMessages);
+  }
+}, [currentChat])
+
+useEffect(() => {
+  if (user && user.id) {
+    console.log("User ID available, fetching conversations:", user.id);
     fetchUserConversations();
-  }, []);
+  }
+}, [user]);
+
   useEffect(() => {
     // Scroll to the latest message
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,7 +53,7 @@ const Chat = () => {
 
   const fetchUserPrompts = async () => {
     try {
-      const token = await getToken(); // Fetch user token
+      const token = await getToken(); 
       const response = await fetch(`/api/user/get-prompts`, {
         method: 'POST',
         headers: {
@@ -55,40 +74,51 @@ const Chat = () => {
   }
 
   const fetchUserConversations = async () => {
+    if (!user || !user.id) {
+      console.log("No user found, cannot fetch conversations");
+      return;
+    }
+    
     try {
-      if (!user) {
-        console.error('User is not logged in or user data is not loaded.');
-        return;
-      }
-
       const token = await getToken();
-      if (!token) {
-        console.error('Failed to retrieve token. User might not be authenticated.');
-        return;
-      }
-
+      console.log("Fetching conversations for user:", user.id);
+      
       const response = await fetch(`http://localhost:8000/conversations/${user.id}`, {
-        method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
+      
       if (!response.ok) {
-        throw new Error(`Failed to fetch conversations. Status: ${response.status}`);
+        throw new Error(`Failed to fetch conversations: ${response.status}`);
       }
-
+      
       const data = await response.json();
-      if (!data || data.length === 0) {
-        console.warn('No conversations found for the user.');
+      console.log(`Fetched ${data.length} conversations from API`);
+      
+      if (Array.isArray(data)) {
+        const processedData = data.map(conv => ({
+          ...conv,
+          id: conv.id || String(conv._id),
+          conversation_title: conv.conversation_title || `Chat ${new Date().toISOString()}`
+        }));
+        
+        processedData.sort((a, b) => {
+          return b.id.localeCompare(a.id);
+        });
+        
+        console.log(`Setting ${processedData.length} conversations to state`);
+        setChats(processedData);
+      } else {
+        console.error("API returned non-array data:", data);
+        setChats([]);
       }
-
-      setChats(data);
-      console.log('Conversations fetched successfully:', data);
     } catch (err) {
-      console.error('Error fetching conversations:', err.message);
+      console.error('Error fetching conversations:', err);
     }
-  }
+  };
+
+  
 
   const handleNewChat = async() => {
     await fetchUserPrompts()
@@ -104,48 +134,67 @@ const Chat = () => {
   };
 
   const handleCreateChat = async () => {
-  if (!selectedModel || selectedPrompts.length === 0) {
-    alert('Select model and at least one prompt!');
-    return;
-  }
-
-  try {
-    const token = await getToken(); // Fetch user token
-    const response = await fetch(`http://localhost:8000/conversations/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        user_id: user.id,
-        chosen_model: selectedModel,
-        chosen_prompts: selectedPrompts,
-        parameters: {}
-      }),
-    });
-
-    
-    if (!response.ok) {
-      throw new Error('Failed to create a new chat.');
+    if (!selectedModel || selectedPrompts.length === 0) {
+      alert('Select model and at least one prompt!');
+      return;
     }
+  
+    try {
+      const token = await getToken();
+      const response = await fetch(`http://localhost:8000/conversations/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          chosen_model: selectedModel,
+          chosen_prompts: selectedPrompts,
+          conversation_title: chatTitle || `${selectedModel} Chat`, // Use custom title or default
+          parameters: {}
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to create a new chat.');
+      }
+  
+      const newChat = await response.json();
+      console.log('A new chat has been created:', newChat);
+      setChats((prev) => [newChat, ...prev]);
+      setCurrentChat(newChat);
+      setMessages([]);
+      setIsModalOpen(false);
+      setChatTitle(''); // Reset title for next time
+    } catch (err) {
+      console.error('Error while creating chat:', err.message);
+      alert('An error occurred while creating the chat.');
+    }
+  };
 
-    const newChat = await response.json();
-    console.log('A new chat has been created:', newChat);
-    setChats((prev) => [newChat, ...prev]);
-    setCurrentChat(newChat);
-    setMessages([]);
-    setIsModalOpen(false);
-  } catch (err) {
-    console.error('Error while creating chat:', err.message);
-    alert('An error occurred while creating the chat.');
-  }
-};
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; 
 
-const handleFileChange = (event) => {
-  const selectedFiles = Array.from(event.target.files);
-  setFiles((prevFiles) => [...prevFiles, ...selectedFiles]); // Add selected files to the list
-};
+  const handleFileChange = (event) => {
+    const fileList = event.target.files;
+    
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`File ${file.name} exceeds the maximum size of 5MB`);
+        return;
+      }
+      
+      const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'];
+      if (!allowedTypes.includes(file.type)) {
+        alert(`File ${file.name} has an unsupported format`);
+        return;
+      }
+    }
+    
+    setFiles(Array.from(fileList));
+  };
 
 const handleRemoveFile = (index) => {
   setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index)); // Remove file from the list
@@ -180,11 +229,17 @@ const convertFilesToBase64 = async (fileList) => {
   return fileObjects;
 };
 
-// Update your handleSendMessage function
-const handleSendMessage = async () => {
-  if (!input.trim() && files.length === 0) return;
+const [lastRequestTime, setLastRequestTime] = useState(0);
+const MIN_REQUEST_INTERVAL = 1000; // ms
 
-  // Add user message to messages
+const handleSendMessage = async () => {
+  const now = Date.now();
+  if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+    alert('Please wait before sending another message');
+    return;
+  }
+  setLastRequestTime(now);
+
   const userMessage = {
     id: Date.now(),
     content: input,
@@ -198,7 +253,6 @@ const handleSendMessage = async () => {
   setIsLoading(true);
 
   try {
-    // Validate required data
     if (!user || !user.id) {
       throw new Error('User ID is missing or invalid');
     }
@@ -222,9 +276,10 @@ const handleSendMessage = async () => {
       files: processedFiles 
     };
     
-    console.log('Sending request with data:', {
-      ...requestData,
-      files: `${processedFiles.length} files` 
+    console.log('Sending request with:', {
+      model: requestData.model_id,
+      prompt_count: requestData.prompt_ids.length, 
+      file_count: processedFiles.length
     });
 
     const response = await fetch(`http://localhost:8000/prompt-request`, {
@@ -300,33 +355,44 @@ const toggleSidebar = () => {
                 New chat
               </button>
             </div>
-
-            {/* Chat list */}
             <div className="flex-1 overflow-y-auto px-2">
-              <div className="text-xs text-gray-500 px-3 py-2">Recent conversations</div>
-              {chats.map((chat) => (
-                <button
-                  key={chat.id}
-                  className="w-full text-left px-3 py-2 rounded-md hover:bg-[#202020] text-white/80 my-1 flex items-center gap-2"
-                  onClick={() => setCurrentChat(chat)}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              <div className="text-xs text-gray-500 px-3 py-2">
+                Recent conversations ({chats.length})
+              </div>
+              {chats.length === 0 ? (
+                <div className="text-gray-500 text-center py-4">No conversations found</div>
+              ) : (
+                chats.map((chat) => (
+                  <button
+                    key={chat.id}
+                    className={`w-full text-left px-3 py-2 rounded-md hover:bg-[#202020] ${
+                      currentChat && currentChat.id === chat.id ? 'bg-[#202020]' : ''
+                    } text-white/80 my-1 flex items-center gap-2`}
+                    onClick={() => setCurrentChat(chat)}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                    ></path>
-                  </svg>
-                  <span className="truncate">{chat.conversation_title}</span>
-                </button>
-              ))}
+                    <svg
+                      width="16"
+                      height="16"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                      ></path>
+                    </svg>
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="truncate">{chat.conversation_title}</span>
+                      <span className="text-xs text-gray-500 truncate">
+                        {chat.chosen_model} • {chat.messages.length} messages
+                      </span>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -434,6 +500,16 @@ const toggleSidebar = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-[#121212] p-6 rounded-lg w-96">
                 <h2 className="text-white text-lg font-bold mb-4">New chat settings</h2>
+
+                {/* Chat title input */}
+                <label className="text-gray-400 block mb-2">Chat title (optional):</label>
+                <input
+                  type="text"
+                  value={chatTitle}
+                  onChange={(e) => setChatTitle(e.target.value)}
+                  placeholder="My new conversation"
+                  className="w-full p-2 bg-[#2e2e2e] text-white rounded-md mb-4"
+                />
                 
                 {/* Model selection */}
                 <label className="text-gray-400 block mb-2">Select model:</label>
@@ -447,7 +523,7 @@ const toggleSidebar = () => {
                   <option value="huggingface">Huggingface</option>
                   <option value="openai">ChatGPT</option>
                 </select>
-
+                
                 {/* Prompt selection */}
                 <label className="text-gray-400 block mb-2">Select prompts:</label>
                 <div className="flex flex-col gap-2 mb-4">

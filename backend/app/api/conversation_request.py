@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from bson import ObjectId
+from datetime import datetime
+
 from app.models.conversation_model import Conversation, ConversationCreate, Message
 from app.db.get_conversation_info import create_conversation_in_db, get_conversation_info
 from app.services.openai_service import parse_response
@@ -11,13 +13,16 @@ router = APIRouter()
 async def create_conversation(conv_data: dict):
     try:
         print(conv_data)
+        title = conv_data.get('conversation_title', 
+                            f"{conv_data['chosen_model']} Chat - {datetime.now().strftime('%b %d, %Y')}")
+        
         conv_dict = {
             "user_id": conv_data['user_id'],
             "chosen_model": conv_data['chosen_model'],
             "chosen_prompts": conv_data['chosen_prompts'],
-            "parameters": {},
+            "parameters": conv_data.get('parameters', {}),
             "messages": [],
-            "conversation_title": "Default"
+            "conversation_title": title
         }
         conv_final = await create_conversation_in_db(conv_dict)
         return conv_final
@@ -28,17 +33,14 @@ async def create_conversation(conv_data: dict):
 
 
 
-@router.get("/conversations/{user_id}", response_model=[])
+@router.get("/conversations/{user_id}")
 async def get_conversation(user_id: str):
     print("User ID:", user_id)
     got_conversations = await get_conversation_info(user_id)
     if not got_conversations:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    for conversation in got_conversations:
-        conversation["_id"] = str(conversation["_id"])
+        return []  # Return empty list instead of 404
     print("Got conversations:", got_conversations)
     return got_conversations
-    
 
 
 

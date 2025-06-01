@@ -54,7 +54,7 @@ async def send_request_to_ai_api(
         full_prompt = "\n\n".join([prompt.text for prompt in prompts_data]) + f"\n\n{user_message}"
         print(f"Full prompt: {full_prompt}")
         
-        asyncio.create_task(add_message_to_conversation(conversation_id, user_message, "user"))
+        # asyncio.create_task(add_message_to_conversation(conversation_id, user_message, "user"))
         
         if model_info == "openai":
             if has_images or file_count > 0:
@@ -71,9 +71,8 @@ async def send_request_to_ai_api(
                 response = send_to_gemini(full_prompt, conversation_id, user_id)
                 
         elif model_info == "huggingface":
-
-            response = send_to_hugsging_face(full_prompt, conversation_id, user_id)
-            
+            pass
+            #response = send_to_hugsging_face(full_prompt, conversation_id, user_id)
         else:
             raise ValueError(f"Invalid API choice: {model_info}")
 

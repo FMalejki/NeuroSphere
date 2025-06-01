@@ -26,9 +26,10 @@ async def connect_to_mongo():
 async def create_conversation_in_db(conversation_data: dict) -> Conversation:
     conversation_collection = await connect_to_mongo()
     try:
-        # Add a default title if not provided
-        if "conversation_title" not in conversation_data:
+        if "conversation_title" not in conversation_data or not conversation_data["conversation_title"]:
             conversation_data["conversation_title"] = f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        
+        print(f"Creating conversation with title: {conversation_data['conversation_title']}")
         
         result = await conversation_collection.insert_one(conversation_data)
         created_conversation = await conversation_collection.find_one({"_id": result.inserted_id})
@@ -37,70 +38,59 @@ async def create_conversation_in_db(conversation_data: dict) -> Conversation:
             id=str(created_conversation["_id"]),
             user_id=created_conversation["user_id"],
             chosen_model=created_conversation["chosen_model"],
-            chosen_prompts=created_conversation["chosen_prompts"],
-            conversation_title=created_conversation.get("conversation_title", "New Chat"),
-            parameters=created_conversation["parameters"],
-            messages=[],
+            chosen_prompts=created_conversation.get("chosen_prompts", []),
+            conversation_title=created_conversation["conversation_title"],  # Keep the original title
+            parameters=created_conversation.get("parameters", {}),
+            messages=created_conversation.get("messages", []),
         )
     except Exception as e:
+        print(f"Error in create_conversation_in_db: {str(e)}")
         raise RuntimeError(f"Error while creating conversation: {e}")
 
 
 async def get_conversation_info(user_id: str):
     conversation_collection = await connect_to_mongo()
-    print("Connected to MongoDB")
+    print(f"Connected to MongoDB, fetching conversations for user: {user_id}")
     try:
         cursor = conversation_collection.find({"user_id": user_id})
+        cursor = cursor.sort("_id", -1)
         conversations = []
+        
         async for document in cursor:
-            # Format each document to match what the frontend expects
             formatted_conversation = {
                 "id": str(document["_id"]),
                 "user_id": document["user_id"],
                 "chosen_model": document["chosen_model"],
-                "chosen_prompts": document["chosen_prompts"],
-                # Set a default title if not present
-                "conversation_title": document.get("conversation_title", "Chat " + str(len(conversations) + 1)),
+                "chosen_prompts": document.get("chosen_prompts", []),
+                "conversation_title": document.get("conversation_title", f"Chat {len(conversations) + 1}"),
                 "parameters": document.get("parameters", {}),
                 "messages": document.get("messages", [])
             }
             conversations.append(formatted_conversation)
-            print(f"Formatted conversation: {formatted_conversation}")
-
-        if not conversations:
-            print(f"No conversations found for user ID: {user_id}")
-            return []  # Return empty array instead of raising error
-        
+            
+        print(f"Total conversations found: {len(conversations)}")
         return conversations
     except Exception as e:
         print(f"Error while fetching conversation info: {e}")
         raise RuntimeError(f"Error while fetching conversation info: {e}")
-    
 
 async def update_conversation_in_db(conversation_id: str, update_data: dict):
     conversation_collection = await connect_to_mongo()
-    print("Connected to MongoDB")
+    print(f"Connected to MongoDB, updating conversation {conversation_id}")
     
-    #"""
-   #"""
-   #Updates a conversation in the MongoDB database.
-   #
-   #Args:
-   #    conversation_id (str): The ID of the conversation to update.
-   #    update_data (dict): The data to update. Can include one or more fields.
-   #
-   #Returns:
-   #    dict: The updated conversation object.
-   #"""
     try:        
+        # IMPORTANT: Convert string ID to ObjectId for MongoDB queries
         result = await conversation_collection.update_one(
-            {"_id": str(conversation_id)},
+            {"_id": ObjectId(conversation_id)},  # Fixed: Use ObjectId not string
             {"$set": update_data}
         )
         
         if result.matched_count == 0:
+            print(f"No conversation found with ID: {conversation_id}")
             raise ValueError(f"Conversation with ID {conversation_id} not found")
+        print(f"Updated conversation: {result.modified_count} document(s)")
     except Exception as e:
+        print(f"Error in update_conversation_in_db: {str(e)}")
         raise RuntimeError(f"Error while updating conversation: {e}")
     
     
@@ -109,22 +99,26 @@ async def update_message_to_conversation(conversation_id: str, message: str, rol
     conversation_collection = await connect_to_mongo()
     print("Connected to MongoDB")
     try:
-        # Create a new message object
         new_message = {
             "role": rol,
             "content": message,
-            "timestamp": datetime.now().isoformat()  # Dodanie znacznika czasu
+            "timestamp": datetime.now().isoformat()
         }
         print(new_message)
+        
         filter = {"_id": ObjectId(conversation_id)} 
 
-        # Use $push to add the new message to the messages list
-        await conversation_collection.update_one(
+        result = await conversation_collection.update_one(
             filter,
             {"$push": {"messages": new_message}}
         )
-        print("updated")
+        
+        if result.matched_count == 0:
+            print(f"No conversation found with ID: {conversation_id}")
+        else:
+            print(f"Updated conversation: {result.modified_count} document(s)")
     except Exception as e:
+        print(f"Error in update_message_to_conversation: {str(e)}")
         raise RuntimeError(f"Error while adding message to conversation: {e}")
     
     

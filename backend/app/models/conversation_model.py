@@ -22,8 +22,8 @@ class Conversation(BaseModel):
 class ConversationCreate(BaseModel):
     user_id: str
     chosen_model: Optional[str] = "gemini" #"gpt-3.5"
-    chosen_prompts: Optional[List[str]] = [] ##do fr
-    parameters: Optional[Dict[str, Any]] = []
-
+    chosen_prompts: Optional[List[str]] = []
+    conversation_title: Optional[str] = "New Conversation"
+    parameters: Optional[Dict[str, Any]] = {}
 
 
