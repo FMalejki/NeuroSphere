@@ -27,7 +27,7 @@ const Navbar = () => {
         <Link href="/chat" className="hover:text-blue-300 transition">
           AI Chat
         </Link>
-
+{/*
         {isSeller && (
           <button
             onClick={() => router.push('/seller')}
@@ -45,6 +45,7 @@ const Navbar = () => {
             Become seller
           </button>
         )}
+*/}
       </div>
 
       <div className="hidden md:flex items-center gap-4 pr-2">
