@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.19.3",
+    "@radix-ui/react-label": "^2.1.7",
     "@solana/web3.js": "^1.98.2",
+    "@tabler/icons-react": "^3.34.0",
     "@vercel/analytics": "^1.5.0",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
@@ -24,14 +26,14 @@
     "inngest": "^3.35.1",
     "lucide-react": "^0.509.0",
     "mongoose": "^8.14.1",
-    "motion": "^12.9.4",
+    "motion": "^12.16.0",
     "next": "^15.2.3",
     "prettier": "^3.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.1",
     "simplex-noise": "^4.0.3",
-    "tailwind-merge": "^3.2.0",
+    "tailwind-merge": "^3.3.0",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
