@@ -44,7 +44,7 @@ export default function BecomeSeller() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900 text-white">
       <div className="max-w-md w-full bg-gray-800 p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold mb-6 text-blue-400">
+        <h1 className="text-3xl font-bold mb-6 text-violet-300">
           Become a Seller
         </h1>
 
@@ -55,7 +55,7 @@ export default function BecomeSeller() {
             </p>
             <button
               onClick={() => router.push('/seller')}
-              className="w-full bg-blue-600 py-3 rounded-lg hover:bg-blue-700 transition-colors text-white font-semibold"
+              className="w-full bg-violet-500 py-3 rounded-lg hover:bg-violet-600 transition-colors text-white font-semibold"
             >
               Go to the seller panel
             </button>
@@ -74,7 +74,7 @@ export default function BecomeSeller() {
               className={`w-full py-3 rounded-lg transition-colors text-white font-semibold ${
                 isLoading
                   ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-violet-500 hover:bg-violet-600'
               }`}
             >
               {isLoading ? 'Processing...' : 'Activate seller account'}
