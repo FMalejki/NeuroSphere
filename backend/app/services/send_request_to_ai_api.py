@@ -10,7 +10,7 @@ from app.services.openai_service import (
     send_to_openai_with_images,
     send_to_gemini_with_images
 )
-from app.services.user_conversation_message_adder import add_message_to_conversation
+from app.services.user_conversation_message_adder import add_message_with_files_to_conversation, add_message_to_conversation
 from app.handlers.file_handlers import handle_image, handle_text, handle_zip, handle_default
 
 async def send_request_to_ai_api(
@@ -31,6 +31,12 @@ async def send_request_to_ai_api(
         
         if files:
             print(f"Processing {len(files)} files")
+            await add_message_with_files_to_conversation(
+                conversation_id=conversation_id,
+                message=user_message if user_message else "Image uploaded",
+                rol="user",
+                files=files
+            )
             for f in files:
                 try:
                     file_count += 1
@@ -50,6 +56,12 @@ async def send_request_to_ai_api(
                         handle_default(f, content)
                 except Exception as e:
                     print(f"Error processing file: {str(e)}")
+        else:
+            add_message_to_conversation(
+                conversation_id=conversation_id,
+                message=user_message if user_message else "Image uploaded",
+                rol="user",
+                )
 
         full_prompt = "\n\n".join([prompt.text for prompt in prompts_data]) + f"\n\n{user_message}"
         print(f"Full prompt: {full_prompt}")
@@ -79,6 +91,7 @@ async def send_request_to_ai_api(
         return {
             "response": response,
         }
+    
 
     except Exception as e:
         print(f"Error in send_request_to_ai_api: {str(e)}")

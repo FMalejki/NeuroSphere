@@ -25,7 +25,7 @@ async def process_ai_request(request: Request):
             conversation_id=request_data["conversation_id"],
             files=files
         )
-        
+        print("f files: {files}")
         return {
             "status": "success",
             "response": response

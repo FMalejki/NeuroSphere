@@ -4,6 +4,12 @@ from bson import ObjectId
 from app.models.prompt_model import PromptModel
 from datetime import datetime
 
+class FileData(BaseModel):
+    name: str
+    type: str
+    size: int
+    data: str
+
 class Message(BaseModel):
     role: str  #user, error, system
     content: str

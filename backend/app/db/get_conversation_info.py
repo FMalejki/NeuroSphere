@@ -4,7 +4,7 @@ from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient 
 import asyncio
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
 
 load_dotenv()  
@@ -79,9 +79,8 @@ async def update_conversation_in_db(conversation_id: str, update_data: dict):
     print(f"Connected to MongoDB, updating conversation {conversation_id}")
     
     try:        
-        # IMPORTANT: Convert string ID to ObjectId for MongoDB queries
         result = await conversation_collection.update_one(
-            {"_id": ObjectId(conversation_id)},  # Fixed: Use ObjectId not string
+            {"_id": ObjectId(conversation_id)},  
             {"$set": update_data}
         )
         
@@ -121,7 +120,39 @@ async def update_message_to_conversation(conversation_id: str, message: str, rol
         print(f"Error in update_message_to_conversation: {str(e)}")
         raise RuntimeError(f"Error while adding message to conversation: {e}")
     
+async def update_message_with_files_to_conversation(
+    conversation_id: str, 
+    message: str, 
+    rol: str,
+    files: List[Dict[str, Any]] = None
+):
+    print("Adding message with files to MongoDB")
+    conversation_collection = await connect_to_mongo()
+    print("Connected to MongoDB")
     
+    try:
+        new_message = {
+            "role": rol,
+            "content": message,
+            "timestamp": datetime.now().isoformat(),
+            "files": files or []
+        }
+        print(f"New message with {len(files) if files else 0} files")
+        
+        filter = {"_id": ObjectId(conversation_id)} 
+
+        result = await conversation_collection.update_one(
+            filter,
+            {"$push": {"messages": new_message}}
+        )
+        
+        if result.matched_count == 0:
+            print(f"No conversation found with ID: {conversation_id}")
+        else:
+            print(f"Updated conversation with file data: {result.modified_count} document(s)")
+    except Exception as e:
+        print(f"Error in update_message_with_files_to_conversation: {str(e)}")
+        raise RuntimeError(f"Error while adding message with files to conversation: {e}")
 
 
 
