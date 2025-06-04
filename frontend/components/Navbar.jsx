@@ -54,6 +54,7 @@ const Navbar = () => {
           type="button"
           className="flex items-center gap-2 hover:text-blue-300 transition"
         >
+          {/*}
           <svg
             className="w-4 h-4"
             fill="none"
@@ -67,7 +68,7 @@ const Navbar = () => {
               strokeWidth="2"
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
-          </svg>
+          </svg>*/}
         </button>
         {user ? (
           <>

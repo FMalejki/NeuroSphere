@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import Image from 'next/image';
 import { assets } from '@/assets/assets';
 import Link from 'next/link';
+import GridBackground from '@/components/GridBackground';
 
 const Chat = () => {
   const { user } = useAppContext();
@@ -270,301 +271,302 @@ const toggleSidebar = () => {
 };
 
   return (
-    <div className="flex flex-col h-screen bg-black">
-      <Navbar />
-
-      {/* Main chat container */}
-      <div className="flex-1 flex overflow-hidden pt-16">
-        {/* Left panel - chat list */}
-        {isSidebarOpen && (
-          <div className="w-64 bg-[#121212] border-r border-gray-800 flex flex-col h-full md:flex"> {/* Removed `hidden` */}
-            <div className="p-4">
-              <button
-                onClick={handleNewChat}
-                className="w-full flex items-center justify-center gap-2 bg-[#202020] hover:bg-[#282828] text-white py-2 px-4 rounded-md border border-gray-700"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                New chat
-              </button>
-            </div>
-
-            {/* Chat list */}
-            <div className="flex-1 overflow-y-auto px-2">
-              <div className="text-xs text-gray-500 px-3 py-2">Recent conversations</div>
-              {chats.map((chat) => (
+    <GridBackground gridColor="rgba(59,130,246,0.08)">
+      <div className="flex flex-col h-screen">
+        <Navbar />
+        {/* Main chat container */}
+        <div className="flex-1 flex overflow-hidden pt-16">
+          {/* Left panel - chat list */}
+          {isSidebarOpen && (
+            <div className="w-64 bg-transparent border-none flex flex-col h-full">
+              <div className="p-4">
                 <button
-                  key={chat.id}
-                  className="w-full text-left px-3 py-2 rounded-md hover:bg-[#202020] text-white/80 my-1 flex items-center gap-2"
-                  onClick={() => setCurrentChat(chat)}
+                  onClick={handleNewChat}
+                  className="w-full flex items-center border-violet-300 justify-center gap-2 bg-black hover:bg-violet-600 text-white py-2 px-4 rounded-md border"
                 >
                   <svg
+                    xmlns="http://www.w3.org/2000/svg"
                     width="16"
                     height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  New chat
+                </button>
+              </div>
+              {/* Chat list */}
+              <div className="flex-1 overflow-y-auto px-2">
+                <div className="text-xs text-gray-500 px-3 py-2">Recent conversations</div>
+                {chats.map((chat) => (
+                  <button
+                    key={chat.id}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-black text-white/80 my-1 flex items-center gap-2"
+                    onClick={() => setCurrentChat(chat)}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                      ></path>
+                    </svg>
+                    <span className="truncate">{chat.conversation_title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Main chat area */}
+          <div className="flex-1 flex flex-col bg-transparent">
+            {/* Sidebar toggle icon */}
+            <div
+              className={`absolute top-20 transition-all ${
+                isSidebarOpen ? 'left-70' : 'left-4'
+              } z-50`}
+            >
+              <button
+                onClick={toggleSidebar}
+                className="bg-black border-violet-300 text-white p-2 rounded-md hover:bg-violet-600 transition-colors border"
+              >
+                {isSidebarOpen ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
+                    strokeWidth="1.5"
                     stroke="currentColor"
+                    className="w-6 h-6"
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                    ></path>
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
-                  <span className="truncate">{chat.conversation_title}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Main chat area */}
-        <div className="flex-1 flex flex-col bg-[#181818]">
-          {/* Sidebar toggle icon */}
-          <div
-            className={`absolute top-20 transition-all ${
-              isSidebarOpen ? 'left-70' : 'left-4'
-            } z-50`}
-          >
-            <button
-              onClick={toggleSidebar}
-              className="bg-[#202020] text-white p-2 rounded-md hover:bg-[#282828] transition-colors"
-            >
-              {isSidebarOpen ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="w-6 h-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="w-6 h-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3.75 5.75h16.5M3.75 12h16.5M3.75 18.25h16.5"
-                  />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-white">
-                <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
-                <p className="text-gray-400 max-w-md">
-                Start a conversation with our AI model
-                </p>
-              </div>
-            ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] p-3 rounded-lg ${
-                      msg.role === 'user'
-                        ? 'bg-violet-500 text-white'
-                        : 'bg-[#2e2e2e] text-white'
-                    }`}
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="w-6 h-6"
                   >
-                    {msg.content}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.75 5.75h16.5M3.75 12h16.5M3.75 18.25h16.5"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center text-white">
+                  <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
+                  <p className="text-gray-400 max-w-md">
+                  Start a conversation with our AI model
+                  </p>
+                </div>
+              ) : (
+                messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] p-3 rounded-lg ${
+                        msg.role === 'user'
+                          ? 'bg-violet-500 text-white'
+                          : 'bg-[#2e2e2e] text-white'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))
+              )}
+              {previewMessage && (
+                <div className="flex justify-end">
+                  <div className="max-w-[80%] p-3 rounded-lg bg-violet-300 text-white opacity-75">
+                    {previewMessage}
                   </div>
                 </div>
-              ))
-            )}
-            {previewMessage && (
-              <div className="flex justify-end">
-                <div className="max-w-[80%] p-3 rounded-lg bg-violet-300 text-white opacity-75">
-                  {previewMessage}
-                </div>
-              </div>
-            )}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="max-w-[80%] p-3 rounded-lg bg-[#2e2e2e] text-white">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
-                    <div
-                      className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
-                      style={{ animationDelay: '0.2s' }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
-                      style={{ animationDelay: '0.4s' }}
-                    ></div>
+              )}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] p-3 rounded-lg bg-black text-white">
+                    <div className="flex space-x-2">
+                      <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
+                      <div
+                        className="w-2 h-2 rounded-full bg-black animate-bounce"
+                        style={{ animationDelay: '0.2s' }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 rounded-full bg-black animate-bounce"
+                        style={{ animationDelay: '0.4s' }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-          {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-[#121212] p-6 rounded-lg w-96">
-                <h2 className="text-white text-lg font-bold mb-4">New chat settings</h2>
-                
-                {/* Model selection */}
-                <label className="text-gray-400 block mb-2">Select model:</label>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full p-2 bg-[#2e2e2e] text-white rounded-md mb-4"
-                >
-                  <option value="">Select Model</option>
-                  <option value="gemini">Gemini</option>
-                  <option value="huggingface">Huggingface</option>
-                  <option value="openai">ChatGPT</option>
-                </select>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+            {isModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="relative w-96 p-6 rounded-lg border border-violet-300">
+                  <GridBackground gridColor="rgba(59,130,246,0.08)" className="absolute inset-0 rounded-lg" />
+                  <div className="relative z-10">
+                    <h2 className="text-white text-lg font-bold mb-4">New chat settings</h2>
+                    
+                    {/* Model selection */}
+                    <label className="text-gray-400 block mb-2">Select model:</label>
+                    <select
+                      value={selectedModel}
+                      onChange={(e) => setSelectedModel(e.target.value)}
+                      className="w-full p-2 bg-[#2e2e2e] text-white rounded-md mb-4"
+                    >
+                      <option value="">Select Model</option>
+                      <option value="gemini">Gemini</option>
+                      <option value="huggingface">Huggingface</option>
+                      <option value="openai">ChatGPT</option>
+                    </select>
 
-                {/* Prompt selection */}
-                <label className="text-gray-400 block mb-2">Select prompts:</label>
-                <div className="flex flex-col gap-2 mb-4">
-                  {availablePrompts.map((prompt) => (
-                    <label key={prompt.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        value={prompt.id}
-                        onChange={(e) => handlePromptSelection(e.target.value)}
-                        className="form-checkbox text-white"
-                      />
-                      <span className="text-white">{prompt.title}</span>
-                    </label>
+                    {/* Prompt selection */}
+                    <label className="text-gray-400 block mb-2">Select prompts:</label>
+                    <div className="flex flex-col gap-2 mb-4">
+                      {availablePrompts.map((prompt) => (
+                        <label key={prompt.id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            value={prompt.id}
+                            onChange={(e) => handlePromptSelection(e.target.value)}
+                            className="form-checkbox text-white"
+                          />
+                          <span className="text-white">{prompt.title}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* Buttons */}
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setIsModalOpen(false)}
+                        className="bg-gray-700 text-white px-4 py-2 rounded-md"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleCreateChat}
+                        className="bg-violet-500 text-white px-4 py-2 rounded-md"
+                      >
+                        Create
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Message input area */}
+            <div className="p-4 border-t border-none bg-transparent">
+              <div className="flex flex-col gap-2 max-w-4xl mx-auto">
+                {/* Attached files list */}
+                <div className="flex flex-wrap gap-2">
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 bg-transparent text-white px-3 py-2 rounded-md"
+                    >
+                      <span className="truncate max-w-[150px]">{file.name}</span>
+                      <button
+                        onClick={() => handleRemoveFile(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   ))}
                 </div>
 
-                {/* Buttons */}
-                <div className="flex justify-end gap-2">
+                <div className="flex gap-2">
                   <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-700 text-white px-4 py-2 rounded-md"
+                    className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
+                    onClick={() => document.getElementById('file-input').click()}
                   >
-                    Cancel
+                    +
                   </button>
+                  <input
+                    id="file-input"
+                    type="file"
+                    className="hidden"
+                    multiple
+                    onChange={handleFileChange}
+                  />
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={handleInputChange}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Write a message..."
+                    className="flex-1 p-3 bg-black text-white border border-violet-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    disabled={isLoading}
+                  />
                   <button
-                    onClick={handleCreateChat}
-                    className="bg-violet-500 text-white px-4 py-2 rounded-md"
+                    onClick={handleSendMessage}
+                    disabled={isLoading || (!input.trim() && files.length === 0)}
+                    className="bg-violet-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-violet-600 transition-colors"
                   >
-                    Create
+                    {isLoading ? (
+                      <span className="flex items-center justify-center">
+                        <svg
+                          className="animate-spin h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                      </span>
+                    ) : (
+                      <span>Send</span>
+                    )}
                   </button>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Message input area */}
-          <div className="p-4 border-t border-gray-800 bg-[#181818]">
-            <div className="flex flex-col gap-2 max-w-4xl mx-auto">
-              {/* Attached files list */}
-              <div className="flex flex-wrap gap-2">
-                {files.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 bg-[#2e2e2e] text-white px-3 py-2 rounded-md"
-                  >
-                    <span className="truncate max-w-[150px]">{file.name}</span>
-                    <button
-                      onClick={() => handleRemoveFile(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
-                  onClick={() => document.getElementById('file-input').click()}
-                >
-                  +
-                </button>
-                <input
-                  id="file-input"
-                  type="file"
-                  className="hidden"
-                  multiple
-                  onChange={handleFileChange}
-                />
-                <input
-                  type="text"
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Write a message..."
-                  className="flex-1 p-3 bg-[#2e2e2e] text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={isLoading || (!input.trim() && files.length === 0)}
-                  className="bg-violet-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-violet-600 transition-colors"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center">
-                      <svg
-                        className="animate-spin h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                    </span>
-                  ) : (
-                    <span>Send</span>
-                  )}
-                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </GridBackground>
   );
 };
 
