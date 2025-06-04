@@ -81,6 +81,7 @@ useEffect(() => {
     }
     
     try {
+      setLoadingConversations(true);
       const token = await getToken();
       console.log("Fetching conversations for user:", user.id);
       
@@ -101,25 +102,86 @@ useEffect(() => {
         const processedData = data.map(conv => ({
           ...conv,
           id: conv.id || String(conv._id),
-          conversation_title: conv.conversation_title || `Chat ${new Date().toISOString()}`
+          conversation_title: conv.conversation_title || `Chat ${new Date().toISOString()}`,
+          messagesCount: conv.message_count || 0,
+          messages: [] 
         }));
         
         processedData.sort((a, b) => {
           return b.id.localeCompare(a.id);
         });
         
-        console.log(`Setting ${processedData.length} conversations to state`);
         setChats(processedData);
+        
+        if (processedData.length > 0) {
+          const firstChatId = processedData[0].id;
+          console.log(`Loading messages for first chat: ${firstChatId}`);
+          await fetchConversationMessages(firstChatId);
+          
+          const updatedChat = processedData.find(chat => chat.id === firstChatId);
+          setCurrentChat(updatedChat);
+        }
       } else {
         console.error("API returned non-array data:", data);
         setChats([]);
       }
     } catch (err) {
       console.error('Error fetching conversations:', err);
+    } finally {
+      setLoadingConversations(false);
     }
   };
 
-  
+  const fetchConversationMessages = async (conversationId) => {
+    try {
+      const token = await getToken();
+      const response = await fetch(`http://localhost:8000/conversation/${conversationId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch conversation messages: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`Fetched conversation data for ${conversationId}:`, data);
+      
+      setChats(prevChats => {
+        return prevChats.map(chat => {
+          if (chat.id === conversationId) {
+            return { ...chat, messages: data.messages || [] };
+          }
+          return chat;
+        });
+      });
+      
+      return data.messages || [];
+    } catch (err) {
+      console.error('Error fetching conversation messages:', err);
+      return [];
+    }
+  };
+
+  const handleSelectConversation = async (chat) => {
+    try {
+      if (!chat.messages || chat.messages.length === 0) {
+        console.log(`Fetching messages for conversation: ${chat.id}`);
+        const messages = await fetchConversationMessages(chat.id);
+        
+        const updatedChat = chats.find(c => c.id === chat.id);
+        if (updatedChat) {
+          setCurrentChat(updatedChat);
+        }
+      } else {
+        console.log(`Using cached messages for conversation: ${chat.id}`);
+        setCurrentChat(chat);
+      }
+    } catch (err) {
+      console.error('Error selecting conversation:', err);
+    }
+  };
 
   const handleNewChat = async() => {
     await fetchUserPrompts()
@@ -325,25 +387,6 @@ const toggleSidebar = () => {
   setIsSidebarOpen((prev) => !prev); // Toggle sidebar state
 };
 
-const convertBinaryToBase64 = (binaryData) => {
-  if (typeof binaryData === 'string') {
-    return binaryData;
-  }
-  
-
-  try {
-    if (binaryData && binaryData.buffer) {
-      return btoa(
-        new Uint8Array(binaryData.buffer)
-          .reduce((data, byte) => data + String.fromCharCode(byte), '')
-      );
-    }
-    return '';
-  } catch (error) {
-    console.error('Error converting binary to base64:', error);
-    return '';
-  }
-};
 
   return (
     <div className="flex flex-col h-screen bg-black">
@@ -389,7 +432,7 @@ const convertBinaryToBase64 = (binaryData) => {
                     className={`w-full text-left px-3 py-2 rounded-md hover:bg-[#202020] ${
                       currentChat && currentChat.id === chat.id ? 'bg-[#202020]' : ''
                     } text-white/80 my-1 flex items-center gap-2`}
-                    onClick={() => setCurrentChat(chat)}
+                    onClick={() => handleSelectConversation(chat)}
                   >
                     <svg
                       width="16"

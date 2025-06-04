@@ -54,24 +54,24 @@ async def get_conversation_info(user_id: str):
     conversation_collection = await connect_to_mongo()
     print(f"Connected to MongoDB, fetching conversations for user: {user_id}")
     try:
-        cursor = conversation_collection.find({"user_id": user_id})
-        cursor = cursor.sort("_id", -1)
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            {"$project": {
+                "_id": 1,
+                "user_id": 1,
+                "chosen_model": 1,
+                "chosen_prompts": 1,
+                "conversation_title": 1,
+                "parameters": 1,
+                "message_count": {"$size": {"$ifNull": ["$messages", []]}}
+            }},
+            {"$sort": {"_id": -1}}
+        ]
+        
+        cursor = conversation_collection.aggregate(pipeline)
         conversations = []
         
         async for document in cursor:
-            # Process messages to convert binary data to base64 for files
-            messages = document.get("messages", [])
-            for message in messages:
-                if "files" in message and message["files"]:
-                    for file in message["files"]:
-                        if "data" in file and file["data"]:
-                            if isinstance(file["data"], Binary) or isinstance(file["data"], bytes):
-                                try:
-                                    file["data"] = base64.b64encode(file["data"]).decode('utf-8')
-                                except Exception as e:
-                                    print(f"Failed to encode file data: {e}")
-                                    file["data"] = None 
-            
             formatted_conversation = {
                 "id": str(document["_id"]),
                 "user_id": document["user_id"],
@@ -79,7 +79,7 @@ async def get_conversation_info(user_id: str):
                 "chosen_prompts": document.get("chosen_prompts", []),
                 "conversation_title": document.get("conversation_title", f"Chat {len(conversations) + 1}"),
                 "parameters": document.get("parameters", {}),
-                "messages": messages
+                "message_count": document.get("message_count", 0)
             }
             conversations.append(formatted_conversation)
             
