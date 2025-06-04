@@ -26,18 +26,19 @@ const Chat = () => {
   const [currentChat, setCurrentChat] = useState(null);
   const [chatTitle, setChatTitle] = useState('');
 
-useEffect(() => {
-  if (currentChat) {
-    // Set messages from the selected chat
-    const formattedMessages = currentChat.messages.map((msg, index) => ({
-      id: index,
-      content: msg.content,
-      role: msg.role,
-      timestamp: new Date(msg.timestamp)
-    }));
-    setMessages(formattedMessages);
-  }
-}, [currentChat])
+  useEffect(() => {
+    if (currentChat) {
+      // Set messages from the selected chat
+      const formattedMessages = currentChat.messages.map((msg, index) => ({
+        id: index,
+        content: msg.content,
+        role: msg.role,
+        timestamp: new Date(msg.timestamp),
+        files: msg.files || [] // Include files if they exist
+      }));
+      setMessages(formattedMessages);
+    }
+  }, [currentChat])
 
 useEffect(() => {
   if (user && user.id) {
@@ -324,6 +325,26 @@ const toggleSidebar = () => {
   setIsSidebarOpen((prev) => !prev); // Toggle sidebar state
 };
 
+const convertBinaryToBase64 = (binaryData) => {
+  if (typeof binaryData === 'string') {
+    return binaryData;
+  }
+  
+
+  try {
+    if (binaryData && binaryData.buffer) {
+      return btoa(
+        new Uint8Array(binaryData.buffer)
+          .reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+    }
+    return '';
+  } catch (error) {
+    console.error('Error converting binary to base64:', error);
+    return '';
+  }
+};
+
   return (
     <div className="flex flex-col h-screen bg-black">
       <Navbar />
@@ -466,6 +487,30 @@ const toggleSidebar = () => {
                     }`}
                   >
                     {msg.content}
+                    
+                    {/* Display files if they exist */}
+                    {msg.files && msg.files.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-gray-600">
+                        {msg.files.map((file, index) => (
+                          <div key={index} className="mt-1">
+                            {file.type.startsWith('image/') ? (
+                              <img 
+                                src={`data:${file.type};base64,${file.data}`} 
+                                alt={file.name}
+                                className="max-w-full rounded-md max-h-64 mt-2" 
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2 text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>{file.name}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))

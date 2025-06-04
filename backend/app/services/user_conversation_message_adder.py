@@ -24,7 +24,7 @@ async def add_message_with_files_to_conversation(
 ):
     """
     Adds a message with file data to the conversation with the given ID.
-    Converts base64 data to binary format using BSON Binary type before storing.
+    Converts base64 data to binary before storing.
     """
     try:
         print("Adding message with files to conversation")
@@ -41,17 +41,15 @@ async def add_message_with_files_to_conversation(
                         if "," in data_str:
                             data_str = data_str.split(",", 1)[1]
                         
-                        # Convert base64 to binary and wrap with BSON Binary type
-                        binary_data = Binary(base64.b64decode(data_str))
+                        binary_data = base64.b64decode(data_str)
                     else:
-                        # If it's already binary, wrap it with BSON Binary type
-                        binary_data = Binary(file["data"])
+                        binary_data = file["data"]
                     
                     file_objects.append({
                         "name": file_info.get("name", "unnamed_file"),
                         "type": file_info.get("type", "application/octet-stream"),
                         "size": file_info.get("size", 0),
-                        "data": binary_data  # Using BSON Binary type
+                        "data": binary_data
                     })
         
         await update_message_with_files_to_conversation(

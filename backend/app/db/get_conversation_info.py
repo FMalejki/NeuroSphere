@@ -6,6 +6,8 @@ import asyncio
 import os
 from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
+import base64
+from bson.binary import Binary
 
 load_dotenv()  
 
@@ -57,6 +59,19 @@ async def get_conversation_info(user_id: str):
         conversations = []
         
         async for document in cursor:
+            # Process messages to convert binary data to base64 for files
+            messages = document.get("messages", [])
+            for message in messages:
+                if "files" in message and message["files"]:
+                    for file in message["files"]:
+                        if "data" in file and file["data"]:
+                            if isinstance(file["data"], Binary) or isinstance(file["data"], bytes):
+                                try:
+                                    file["data"] = base64.b64encode(file["data"]).decode('utf-8')
+                                except Exception as e:
+                                    print(f"Failed to encode file data: {e}")
+                                    file["data"] = None 
+            
             formatted_conversation = {
                 "id": str(document["_id"]),
                 "user_id": document["user_id"],
@@ -64,7 +79,7 @@ async def get_conversation_info(user_id: str):
                 "chosen_prompts": document.get("chosen_prompts", []),
                 "conversation_title": document.get("conversation_title", f"Chat {len(conversations) + 1}"),
                 "parameters": document.get("parameters", {}),
-                "messages": document.get("messages", [])
+                "messages": messages
             }
             conversations.append(formatted_conversation)
             
