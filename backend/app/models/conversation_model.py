@@ -4,6 +4,12 @@ from bson import ObjectId
 from app.models.prompt_model import PromptModel
 from datetime import datetime
 
+class FileData(BaseModel):
+    name: str
+    type: str
+    size: int
+    data: str
+
 class Message(BaseModel):
     role: str  #user, error, system
     content: str
@@ -22,8 +28,8 @@ class Conversation(BaseModel):
 class ConversationCreate(BaseModel):
     user_id: str
     chosen_model: Optional[str] = "gemini" #"gpt-3.5"
-    chosen_prompts: Optional[List[str]] = [] ##do fr
-    parameters: Optional[Dict[str, Any]] = []
-
+    chosen_prompts: Optional[List[str]] = []
+    conversation_title: Optional[str] = "New Conversation"
+    parameters: Optional[Dict[str, Any]] = {}
 
 
