@@ -397,11 +397,11 @@ const toggleSidebar = () => {
       <div className="flex-1 flex overflow-hidden pt-16">
         {/* Left panel - chat list */}
         {isSidebarOpen && (
-          <div className="w-64 bg-[#121212] border-r border-gray-800 flex flex-col h-full md:flex"> {/* Removed `hidden` */}
+          <div className="w-64 bg-black flex flex-col h-full md:flex"> {/* Removed `hidden` */}
             <div className="p-4">
               <button
                 onClick={handleNewChat}
-                className="w-full flex items-center justify-center gap-2 bg-[#202020] hover:bg-[#282828] text-white py-2 px-4 rounded-md border border-gray-700"
+                className="w-full flex items-center justify-center gap-2 bg-black hover:bg-black text-white py-2 px-4 rounded-md border border-violet-300"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -430,8 +430,8 @@ const toggleSidebar = () => {
                 chats.map((chat) => (
                   <button
                     key={chat.id}
-                    className={`w-full text-left px-3 py-2 rounded-md hover:bg-[#202020] ${
-                      currentChat && currentChat.id === chat.id ? 'bg-[#202020]' : ''
+                    className={`w-full text-left px-3 py-2 rounded-md hover:bg-black ${
+                      currentChat && currentChat.id === chat.id ? 'bg-black' : ''
                     } text-white/80 my-1 flex items-center gap-2`}
                     onClick={() => handleSelectConversation(chat)}
                   >
@@ -463,7 +463,7 @@ const toggleSidebar = () => {
         )}
 
         {/* Main chat area */}
-        <div className="flex-1 flex flex-col bg-[#181818]">
+        <div className="flex-1 flex flex-col bg-black border-violet-300">
           {/* Sidebar toggle icon */}
           <div
             className={`absolute top-20 transition-all ${
@@ -472,7 +472,7 @@ const toggleSidebar = () => {
           >
             <button
               onClick={toggleSidebar}
-              className="bg-[#202020] text-white p-2 rounded-md hover:bg-[#282828] transition-colors"
+              className="bg-black text-white p-2 rounded-md border-violet-300 hover:bg-violet-500 transition-colors"
             >
               {isSidebarOpen ? (
                 <svg
@@ -509,14 +509,14 @@ const toggleSidebar = () => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          <div className="flex-1 overflow-y-auto p-32 pb-0 space-y-6">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-white">
-                <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
-                <p className="text-gray-400 max-w-md">
-                  Start a conversation with our AI model
-                </p>
-              </div>
+              <div className="fixed inset-0 flex flex-col items-center justify-center text-center text-white">
+              <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
+              <p className="text-gray-400 max-w-md">
+                Start a conversation with our AI model
+              </p>
+            </div>
             ) : (
               messages.map((msg) => (
                 <div
@@ -527,13 +527,13 @@ const toggleSidebar = () => {
                     className={`max-w-[80%] p-3 rounded-lg ${
                       msg.role === 'user'
                         ? 'bg-violet-500 text-white'
-                        : 'bg-[#2e2e2e] text-white'
+                        : 'bg-black text-white'
                     }`}
                   >
                     {msg.content}
                     {/* Display files if they exist */}
                     {msg.files && msg.files.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-gray-600">
+                      <div className="mt-2 pt-2 border-t border-transparent">
                         {msg.files.map((file, index) => (
                           <div key={index} className="mt-1">
                             {file.type.startsWith('image/') ? (
@@ -562,7 +562,7 @@ const toggleSidebar = () => {
               <div className="flex justify-start">
                 <div className="max-w-[80%] p-3 rounded-lg bg-black text-white">
                   <div className="flex space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
+                    <div className="w-2 h-2 rounded-full bg-black animate-bounce"></div>
                     <div
                       className="w-2 h-2 rounded-full bg-black animate-bounce"
                       style={{ animationDelay: '0.2s' }}
@@ -578,7 +578,7 @@ const toggleSidebar = () => {
             <div ref={messagesEndRef} />
             {/* Move the message input controls here, below the messages */}
             {currentChat && (
-              <div className="flex gap-2 p-4 border-t border-gray-700 bg-[#121212]">
+              <div className="fixed bottom-0 left-0 right-0 gap-2 p-4 border-transparent border-none bg-black flex items-center max-w-screen-lg mx-auto">
                 <button
                   className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
                   onClick={() => document.getElementById('file-input').click()}
@@ -643,7 +643,7 @@ const toggleSidebar = () => {
                   value={chatTitle}
                   onChange={(e) => setChatTitle(e.target.value)}
                   placeholder="My new conversation"
-                  className="w-full p-2 bg-[#2e2e2e] text-white rounded-md mb-4"
+                  className="w-full p-2 bg-black text-white rounded-md mb-4"
                 />
                 
                 {/* Model selection */}
