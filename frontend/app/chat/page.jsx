@@ -557,28 +557,31 @@ const toggleSidebar = () => {
                     )}
                   </div>
                 </div>
+                
+                ))
               )}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="max-w-[80%] p-3 rounded-lg bg-black text-white">
-                    <div className="flex space-x-2">
-                      <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
-                      <div
-                        className="w-2 h-2 rounded-full bg-black animate-bounce"
-                        style={{ animationDelay: '0.2s' }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 rounded-full bg-black animate-bounce"
-                        style={{ animationDelay: '0.4s' }}
-                      ></div>
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] p-3 rounded-lg bg-black text-white">
+                      <div className="flex space-x-2">
+                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
+                        <div
+                          className="w-2 h-2 rounded-full bg-black animate-bounce"
+                          style={{ animationDelay: '0.2s' }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 rounded-full bg-black animate-bounce"
+                          style={{ animationDelay: '0.4s' }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            )
             <div ref={messagesEndRef} />
           </div>
-          {isModalOpen && (
+          isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-[#121212] p-6 rounded-lg w-96">
                 <h2 className="text-white text-lg font-bold mb-4">New chat settings</h2>
@@ -682,9 +685,5 @@ const toggleSidebar = () => {
             </div>
           </div>
         </div>
-      </div>
-    </GridBackground>
-  );
-};
-
+    )};
 export default Chat;
