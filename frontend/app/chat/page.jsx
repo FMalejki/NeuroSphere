@@ -514,7 +514,7 @@ const toggleSidebar = () => {
               <div className="h-full flex flex-col items-center justify-center text-center text-white">
                 <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
                 <p className="text-gray-400 max-w-md">
-                Start a conversation with our AI model
+                  Start a conversation with our AI model
                 </p>
               </div>
             ) : (
@@ -531,17 +531,16 @@ const toggleSidebar = () => {
                     }`}
                   >
                     {msg.content}
-                    
                     {/* Display files if they exist */}
                     {msg.files && msg.files.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-gray-600">
                         {msg.files.map((file, index) => (
                           <div key={index} className="mt-1">
                             {file.type.startsWith('image/') ? (
-                              <img 
-                                src={`data:${file.type};base64,${file.data}`} 
+                              <img
+                                src={`data:${file.type};base64,${file.data}`}
                                 alt={file.name}
-                                className="max-w-full rounded-md max-h-64 mt-2" 
+                                className="max-w-full rounded-md max-h-64 mt-2"
                               />
                             ) : (
                               <div className="flex items-center gap-2 text-sm">
@@ -557,33 +556,84 @@ const toggleSidebar = () => {
                     )}
                   </div>
                 </div>
-                
-                ))
-              )}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[80%] p-3 rounded-lg bg-black text-white">
-                      <div className="flex space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
-                        <div
-                          className="w-2 h-2 rounded-full bg-black animate-bounce"
-                          style={{ animationDelay: '0.2s' }}
-                        ></div>
-                        <div
-                          className="w-2 h-2 rounded-full bg-black animate-bounce"
-                          style={{ animationDelay: '0.4s' }}
-                        ></div>
-                      </div>
-                    </div>
+              ))
+            )}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] p-3 rounded-lg bg-black text-white">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
+                    <div
+                      className="w-2 h-2 rounded-full bg-black animate-bounce"
+                      style={{ animationDelay: '0.2s' }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 rounded-full bg-black animate-bounce"
+                      style={{ animationDelay: '0.4s' }}
+                    ></div>
                   </div>
-                )}
+                </div>
               </div>
-            )
+            )}
             <div ref={messagesEndRef} />
+            {/* Move the message input controls here, below the messages */}
+            {currentChat && (
+              <div className="flex gap-2 p-4 border-t border-gray-700 bg-[#121212]">
+                <button
+                  className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
+                  onClick={() => document.getElementById('file-input').click()}
+                >
+                  +
+                </button>
+                <input
+                  id="file-input"
+                  type="file"
+                  className="hidden"
+                  multiple
+                  onChange={handleFileChange}
+                />
+                <input
+                  type="text"
+                  value={input}
+                  onChange={handleInputChange}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Write a message..."
+                  className="flex-1 p-3 bg-black text-white border border-violet-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={isLoading || (!input.trim() && files.length === 0)}
+                  className="bg-violet-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-violet-600 transition-colors"
+                >
+                  Send
+                </button>
+              </div>
+            )}
           </div>
-          isModalOpen && (
+          {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-[#121212] p-6 rounded-lg w-96">
+              <div className="bg-[#121212] p-6 rounded-lg w-96 relative">
+                <button
+                  className="absolute top-4 right-4 text-white hover:text-gray-400"
+                  onClick={() => setIsModalOpen(false)}
+                  aria-label="Close"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="w-6 h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
                 <h2 className="text-white text-lg font-bold mb-4">New chat settings</h2>
 
                 {/* Chat title input */}
@@ -625,65 +675,18 @@ const toggleSidebar = () => {
                   ))}
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
-                    onClick={() => document.getElementById('file-input').click()}
-                  >
-                    +
-                  </button>
-                  <input
-                    id="file-input"
-                    type="file"
-                    className="hidden"
-                    multiple
-                    onChange={handleFileChange}
-                  />
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={handleInputChange}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Write a message..."
-                    className="flex-1 p-3 bg-black text-white border border-violet-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={isLoading || (!input.trim() && files.length === 0)}
-                    className="bg-violet-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-violet-600 transition-colors"
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center">
-                        <svg
-                          className="animate-spin h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                      </span>
-                    ) : (
-                      <span>Send</span>
-                    )}
-                  </button>
-                </div>
+                <button
+                  className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors w-full"
+                  onClick={handleCreateChat}
+                >
+                  Create
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
-    )};
+      </div>
+    </div>
+  );
+};
 export default Chat;
