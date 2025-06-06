@@ -1,22 +1,31 @@
+"""
+Endpoint for prompts
+"""
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 from app.services.prompt_service import process_prompt_request
-import json
 
 router = APIRouter()
 
+logger = logging.getLogger("app")
+
 @router.post("/prompt-request", response_model=dict)
 async def process_ai_request(request: Request):
+    """
+    Endpoint for prompt processing
+    """
     try:
         request_data = await request.json()
-        print(f"Received request data: {request_data}")
-        
+        user_id = request_data.get("user_id", "unknown")
+        conversation_id = request_data.get("conversation_id", "unknown")
+        logger.info("Received prompt request from user_id: %s, conversation_id: %s",
+                    user_id, conversation_id)
         required_fields = ["prompt_ids", "model_id", "user_message", "user_id", "conversation_id"]
         for field in required_fields:
             if field not in request_data:
                 raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
-        
         files = request_data.get("files", None)
-        
         response = await process_prompt_request(
             prompt_ids=request_data["prompt_ids"],
             model_id=request_data["model_id"],
@@ -25,6 +34,7 @@ async def process_ai_request(request: Request):
             conversation_id=request_data["conversation_id"],
             files=files
         )
+        logger.info("Succesfully processed prompt for user_id: %s", user_id)
         return {
             "status": "success",
             "response": response
@@ -33,4 +43,5 @@ async def process_ai_request(request: Request):
         raise e
     except Exception as e:
         print(f"Error in process_ai_request: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}") from e
+    

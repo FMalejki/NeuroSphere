@@ -1,5 +1,9 @@
+"""
+Endpoints for chat module 
+"""
 import base64
 from datetime import datetime
+import logging
 
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
@@ -12,16 +16,18 @@ from app.db.get_conversation_info import connect_to_mongo
 
 router = APIRouter()
 
+logger = logging.getLogger("app")
+
 @router.post("/conversations/", response_model=Conversation)
 async def create_conversation(conv_data: dict):
     """
     Creates conversation in the database with the data provided from frontend.
-    If no title is provided, it generates a default title based on the chosen model and current date.
+    If no title is provided, it generates a default title based on the chosen model and date.
     """
     try:
-        print(conv_data)
-        title = conv_data.get('conversation_title', 
-        f"{conv_data['chosen_model']} Chat - {datetime.now().strftime('%b %d, %Y')}")      
+        logger.info("Creating new conversation with data: %s", conv_data)
+        title = conv_data.get('conversation_title',
+        f"{conv_data['chosen_model']} Chat - {datetime.now().strftime('%b %d, %Y')}")    
         conv_dict = {
             "user_id": conv_data['user_id'],
             "chosen_model": conv_data['chosen_model'],
@@ -67,7 +73,7 @@ async def get_single_conversation(conversation_id: str):
             if "files" in message and message["files"]:
                 for file in message["files"]:
                     if "data" in file and file["data"]:
-                        if isinstance(file["data"], Binary) or isinstance(file["data"], bytes):
+                        if isinstance(file['data'], (Binary, bytes)):
                             try:
                                 file["data"] = base64.b64encode(file["data"]).decode('utf-8')
                             except (TypeError, ValueError) as e:
@@ -81,9 +87,10 @@ async def get_single_conversation(conversation_id: str):
             "conversation_title": document.get("conversation_title", "Chat"),
             "parameters": document.get("parameters", {}),
             "messages": messages
-        }    
+        }
         return formatted_conversation
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}") from e
+    

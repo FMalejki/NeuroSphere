@@ -1,31 +1,59 @@
+"""
+OpenAI Service Module
+=====================
+
+This module provides integration with various AI language model services including:
+- OpenAI API
+- Google Gemini API
+- Hugging Face API
+
+The module handles authentication, API key management, and provides a unified interface
+for interacting with these AI services.
+
+Dependencies:
+    - openai: OpenAI's official Python client
+    - python-dotenv: For loading environment variables from .env files
+    - google.genai: Google's Generative AI Python client
+    - requests: For HTTP requests to APIs
+    - logging: For structured logging
+
+Environment Variables:
+    - OPENAI_API_KEY: API key for OpenAI services
+    - GEMINI_API_KEY: API key for Google's Gemini services
+    - HUGGING_FACE_API_KEY: API key for Hugging Face services
+
+Usage:
+    Import this module to access AI language model services in your application.
+    Authentication is handled automatically via environment variables.
+"""
 import asyncio
 import os
+import logging
+from typing import List, Dict, Any
+
+import requests
 import openai
 from dotenv import load_dotenv
-from google import genai  
-import requests
-from app.db.get_conversation_info import update_message_to_conversation
-from app.services.user_conversation_message_adder import add_message_to_conversation
-from typing import List, Dict, Any
-import base64
+from google import genai
 
-# Load environment variables
+from app.services.user_conversation_message_adder import add_message_to_conversation
+
+# Configure logging
+logger = logging.getLogger("app")
+
 load_dotenv()
 
-# OpenAI API Key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
 
-# Gemini API Key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Hugging Face API Key
 HUGGING_FACE_API_KEY = os.getenv("HUGGING_FACE_API_KEY")
 
-# Debugging: Print confirmation of loaded API keys
-print("\nLoaded OpenAI API Key\n")
-print("Loaded Gemini API Key\n")
-print("Loaded Hugging Face API Key\n")
+# Log confirmation of loaded API keys
+logger.info("Loaded OpenAI API Key")
+logger.info("Loaded Gemini API Key")
+logger.info("Loaded Hugging Face API Key")
 
 def build_payload(prompt: str, model: str = "gpt-3.5-turbo", max_tokens: int = 1000):
     """
@@ -43,27 +71,28 @@ def parse_response(response):
     Parse the response from the OpenAI API.
     """
     try:
-        return response["choices"][0]["message"]["content"].strip() #######!!
+        return response["choices"][0]["message"]["content"].strip()
     except (KeyError, IndexError) as e:
-        raise ValueError(f"Failed to parse OpenAI response: {e}")
+        raise ValueError(f"Failed to parse OpenAI response: {e}") from e
 
-def send_to_openai(prompt: str, conversation_id: str, user_id: str):
+def send_to_openai(prompt: str, conversation_id: str, user_id: str = None):
     """
     Send the prompt to OpenAI API.
     """
     try:
         payload = build_payload(prompt)
-        response = openai.ChatCompletion.create(**payload)
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        response = client.chat.completions.create(**payload)
 
         return parse_response(response)
-    except Exception as e:
-
-        # conversation_id  # Replace with actual user ID when possi'bl
-        asyncio.create_task(add_message_to_conversation(conversation_id, "Failed to connect to OpenAI API", "error"))
-
+    except (openai.OpenAIError, ValueError) as e:
+        logger.error("Failed to connect to OpenAI API: %s", e)
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, "Failed to connect to OpenAI API", "error")
+        )
         return f"Failed to connect to OpenAI API: {e}"
 
-def send_to_gemini(prompt: str, conversation_id: str, user_id: str):
+def send_to_gemini(prompt: str, conversation_id: str, user_id: str = None):
     """
     Send the prompt to Gemini API using Google GenAI.
     """
@@ -77,47 +106,59 @@ def send_to_gemini(prompt: str, conversation_id: str, user_id: str):
             contents=prompt
         )
         
-        #return response..
-        #user_id = conversation_id  # Replace with actual user ID when possi'bl
-        print("before add message")
-        asyncio.create_task(add_message_to_conversation(conversation_id, response.text.strip(), "assistant"))
+        logger.debug("Before add message to conversation")
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, response.text.strip(), "assistant")
+        )
 
         return response.text.strip()
     except Exception as e:
-
-        #user_id = conversation_id  # Replace with actual user ID when possi'bl
-        asyncio.create_task(add_message_to_conversation(conversation_id, "Failed to connect to Gemini API", "error"))
-        
+        logger.error("Failed to connect to Gemini API: %s", e)
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, "Failed to connect to Gemini API", "error")
+        )
         return f"Failed to connect to Gemini API: {e}"
 
-def send_to_hugging_face(prompt: str, conversation_id: str, user_id: str):
+def send_to_hugging_face(prompt: str, conversation_id: str, user_id: str = None):
     """
     Send the prompt to Hugging Face API.
     """
     try:
-        # Użyj poprawnego modelu z Hugging Face
-        url = "https://api-inference.huggingface.co/models/bigscience/bloom"  # Przykładowy model
+        url = "https://api-inference.huggingface.co/models/bigscience/bloom"
         headers = {"Authorization": f"Bearer {HUGGING_FACE_API_KEY}"}
         data = {"inputs": prompt}
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()  # Raise an error for HTTP codes 4xx/5xx
-        #user_id = conversation_id  # Replace with actual user ID when possi'bl
-        asyncio.create_task(add_message_to_conversation(conversation_id, response.json()[0]["generated_text"].strip(), "assistant"))
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        response.raise_for_status()
+        asyncio.create_task(
+            add_message_to_conversation(
+                conversation_id, 
+                response.json()[0]["generated_text"].strip(), 
+                "assistant"
+            )
+        )
 
         return response.json()[0]["generated_text"].strip()
-    except Exception as e:
-
-        #user_id = conversation_id  # Replace with actual user ID when possi'bl
-        asyncio.create_task(add_message_to_conversation(conversation_id, "Failed to connect to Hugging Face API", "error"))
-
+    except (requests.RequestException, ValueError, KeyError, IndexError) as e:
+        logger.error("Failed to connect to Hugging Face API: %s", e)
+        asyncio.create_task(
+            add_message_to_conversation(
+                conversation_id, 
+                "Failed to connect to Hugging Face API", 
+                "error"
+            )
+        )
         return f"Failed to connect to Hugging Face API: {e}"
     
-def send_to_openai_with_images(content: List[Dict[str, Any]], conversation_id: str, user_id: str):
+def send_to_openai_with_images(
+    content: List[Dict[str, Any]], 
+    conversation_id: str, 
+    user_id: str = None
+):
     """
     Send multimodal content (text + images) to OpenAI API.
     """
     try:
-        print("Sending multimodal request to OpenAI")
+        logger.info("Sending multimodal request to OpenAI")
         
         # Use the OpenAI client
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -135,21 +176,30 @@ def send_to_openai_with_images(content: List[Dict[str, Any]], conversation_id: s
         ai_response = response.choices[0].message.content.strip()
         
         # Add to conversation history
-        asyncio.create_task(add_message_to_conversation(conversation_id, ai_response, "assistant"))
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, ai_response, "assistant")
+        )
         
         return ai_response
-    except Exception as e:
+    except (openai.OpenAIError, ValueError) as e:
         error_msg = f"Failed to connect to OpenAI Vision API: {str(e)}"
-        print(error_msg)
-        asyncio.create_task(add_message_to_conversation(conversation_id, error_msg, "error"))
+        logger.error(error_msg)
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, error_msg, "error")
+        )
         return error_msg
 
-def send_to_gemini_with_images(content: List[Dict[str, Any]], text_prompt: str, conversation_id: str, user_id: str):
+def send_to_gemini_with_images(
+    content: List[Dict[str, Any]], 
+    text_prompt: str, 
+    conversation_id: str, 
+    user_id: str = None
+):
     """
     Sending multimodal content (text + images + files) to Gemini API using direct REST API
     """
     try:
-        print("Sending multimodal request to Gemini REST API")
+        logger.info("Sending multimodal request to Gemini REST API")
         
         parts = []
         
@@ -182,12 +232,15 @@ def send_to_gemini_with_images(content: List[Dict[str, Any]], text_prompt: str, 
             }
         }
         
-        api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"        
-        import requests
+        api_url = (
+            f"https://generativelanguage.googleapis.com/v1/models/"
+            f"gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        )
         response = requests.post(
             api_url,
             headers={"Content-Type": "application/json"},
-            json=payload
+            json=payload,
+            timeout=30
         )
         
         if response.status_code == 200:
@@ -199,25 +252,35 @@ def send_to_gemini_with_images(content: List[Dict[str, Any]], text_prompt: str, 
                     if "parts" in content and len(content["parts"]) > 0:
                         ai_response = content["parts"][0].get("text", "")
                         
-                        asyncio.create_task(add_message_to_conversation(conversation_id, ai_response, "assistant"))
+                        asyncio.create_task(
+                            add_message_to_conversation(
+                                conversation_id, ai_response, "assistant"
+                            )
+                        )
                         
                         return ai_response
             
             error_msg = "Could not extract response text from Gemini API"
-            print(error_msg)
-            print("API response:", result)
-            asyncio.create_task(add_message_to_conversation(conversation_id, error_msg, "error"))
+            logger.error(error_msg)
+            logger.debug("API response: %s", result)
+            asyncio.create_task(
+                add_message_to_conversation(conversation_id, error_msg, "error")
+            )
             return error_msg
-        else:
-            error_msg = f"Gemini API returned error {response.status_code}: {response.text}"
-            print(error_msg)
-            asyncio.create_task(add_message_to_conversation(conversation_id, error_msg, "error"))
-            return error_msg
+        
+        error_msg = f"Gemini API returned error {response.status_code}: {response.text}"
+        logger.error(error_msg)
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, error_msg, "error")
+        )
+        return error_msg
             
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         error_msg = f"Failed to connect to Gemini Vision API: {str(e)}"
-        print(error_msg)
-        asyncio.create_task(add_message_to_conversation(conversation_id, error_msg, "error"))
+        logger.error(error_msg)
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, error_msg, "error")
+        )
         return error_msg
 
 def test_all_apis():

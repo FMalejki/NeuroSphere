@@ -1,32 +1,56 @@
-import os
+"""
+Module for handling message additions to user conversations.
+Provides functionality to add text messages and messages with file attachments.
+"""
 import base64
-from dotenv import load_dotenv
-from app.models.conversation_model import Conversation, Message
-from app.db.get_conversation_info import get_conversation_info, update_conversation_in_db, update_message_to_conversation, update_message_with_files_to_conversation
-from typing import List, Dict, Any, Optional
-from bson import ObjectId
-from bson.binary import Binary
+import logging
 
+from typing import List, Dict, Any, Optional
+
+from app.db.get_conversation_info import update_message_to_conversation, update_message_with_files_to_conversation
+
+logger = logging.getLogger("app")
 
 async def add_message_to_conversation(conversation_id: str, message: str, rol: str):
+    """
+    Adds a text message to the conversation with the given ID.
+    
+    Args:
+        conversation_id: The ID of the conversation
+        message: The message text content
+        rol: The role of the message sender
+        
+    Raises:
+        RuntimeError: If there's an error adding the message
+    """
     try:
-        print("before next step")
+        logger.debug("Processing message addition to conversation")
         await update_message_to_conversation(conversation_id, message, rol)
     except Exception as e:
-        raise RuntimeError(f"Error while adding message to conversation: {e}")
+        raise RuntimeError(f"Error while adding message to conversation: {e}") from e
+
 
 async def add_message_with_files_to_conversation(
-    conversation_id: str, 
-    message: str, 
+    conversation_id: str,
+    message: str,
     rol: str,
     files: Optional[List[Dict[str, Any]]] = None
 ):
     """
     Adds a message with file data to the conversation with the given ID.
     Converts base64 data to binary before storing.
+    
+    Args:
+        conversation_id: The ID of the conversation
+        message: The message text content
+        rol: The role of the message sender
+        files: List of file objects containing metadata and content
+        
+    Raises:
+        RuntimeError: If there's an error processing files or adding the message
     """
     try:
-        print("Adding message with files to conversation")
+        logger.debug("Adding message with files to conversation")
         
         file_objects = []
 
@@ -52,30 +76,11 @@ async def add_message_with_files_to_conversation(
                     })
         
         await update_message_with_files_to_conversation(
-            conversation_id, 
+            conversation_id,
             message,
-            rol, 
+            rol,
             file_objects
         )
     except Exception as e:
-        print(f"Error processing files: {str(e)}")
-        raise RuntimeError(f"Error while adding message with files to conversation: {e}")
-
-#def add_message_to_conversation(conversation_id: str, message: str, rol: str):#->Conversation
-#    #"""
-#    #Adds a message to the conversation with the given ID.
-#    #"""
-#    try:
-#        # Fetch
-#        #conversation = get_conversation_info(conversation_id)
-#        #if not conversation:
-#        #    raise ValueError("Conversation not found")
-#        
-#        # Add new message
-#        M = Message(rol,message)
-#        #conversation.messages.append(M)
-#        
-#        update_conversation_in_db(conversation_id, {"messages": conversation.messages})
-#        #return conversation
-#    except Exception as e:
-#        raise RuntimeError(f"Error while adding message to conversation: {e}")
+        logger.error("Error processing files: %s", str(e))
+        raise RuntimeError(f"Error while adding message with files to conversation: {e}") from e
