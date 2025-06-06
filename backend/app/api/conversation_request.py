@@ -58,7 +58,6 @@ async def get_single_conversation(conversation_id: str):
         if not document:
             raise HTTPException(status_code=404, detail="Conversation not found")
             
-        # Process messages to convert binary data to base64 for files
         messages = document.get("messages", [])
         for message in messages:
             if "files" in message and message["files"]:

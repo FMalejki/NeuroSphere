@@ -9,7 +9,6 @@ from bson.binary import Binary
 
 
 async def add_message_to_conversation(conversation_id: str, message: str, rol: str):
-    #Adds a message to the conversation with the given ID.
     try:
         print("before next step")
         await update_message_to_conversation(conversation_id, message, rol)
