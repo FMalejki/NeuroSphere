@@ -87,7 +87,7 @@ async def send_request_to_ai_api(
                 except Exception as e:
                     logger.error("Error processing file: %s", str(e))
         else:
-            add_message_to_conversation(
+            await add_message_to_conversation(
                 conversation_id=conversation_id,
                 message=user_message if user_message else "Image uploaded",
                 rol="user",
@@ -101,19 +101,18 @@ async def send_request_to_ai_api(
                 logger.debug(
                     "Sending to OpenAI with %d files (including %s images)", file_count, has_images
                 )
-                response = send_to_openai_with_images(content, conversation_id, user_id)
+                response = await send_to_openai_with_images(content, conversation_id, user_id)
             else:
-                response = send_to_openai(full_prompt, conversation_id, user_id)
+                response = await send_to_openai(full_prompt, conversation_id, user_id)
         elif model_info == "gemini":
             if has_images or file_count > 0:
                 logger.debug(
                     "Sending to Gemini with %d files (including %s files)", file_count, has_images
                 )
-                response = send_to_gemini_with_files(files, full_prompt, conversation_id, user_id)
+                response = await send_to_gemini_with_files(files, full_prompt, conversation_id, user_id)
             else:
-                response = send_to_gemini(full_prompt, conversation_id, user_id)
+                response = await send_to_gemini(full_prompt, conversation_id, user_id)
         elif model_info == "huggingface":
-            # Currently not implemented
             raise ValueError("Hugging Face integration not yet implemented")
         else:
             raise ValueError(f"Invalid API choice: {model_info}")

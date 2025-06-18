@@ -117,6 +117,9 @@ async def update_conversation_in_db(conversation_id: str, update_data: dict):
             {"$set": update_data}
         )
         
+        logger.info("Updating conversation with id: %s", conversation_id)
+        logger.info("Update data: %s", update_data)
+
         if result.matched_count == 0:
             raise ValueError(f"Conversation with ID {conversation_id} not found")
     except Exception as e:
@@ -166,7 +169,7 @@ async def update_message_with_files_to_conversation(
             "timestamp": datetime.now().isoformat(),
             "files": files or []
         }
-        logger.info("Adding message with files to conversation: %s", files)
+        logger.info("Adding message with files to conversation: %s", conversation_id)
         print(f"New message with {len(files) if files else 0} files")   
         filter_ = {"_id": ObjectId(conversation_id)} 
 
