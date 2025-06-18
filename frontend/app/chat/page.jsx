@@ -511,7 +511,7 @@ const toggleSidebar = () => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-32 pb-0 space-y-6">
             {messages.length === 0 ? (
-              <div className="fixed inset-0 flex flex-col items-center justify-center text-center text-white">
+              <div className="flex flex-col items-center justify-center text-center text-white h-full">
               <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
               <p className="text-gray-400 max-w-md">
                 Start a conversation with our AI model
@@ -578,7 +578,7 @@ const toggleSidebar = () => {
             <div ref={messagesEndRef} />
             {/* Move the message input controls here, below the messages */}
             {currentChat && (
-              <div className="fixed bottom-0 left-0 right-0 gap-2 p-4 border-transparent border-none bg-black flex items-center max-w-screen-lg mx-auto">
+              <div className="flex bottom-0 left-0 right-0 gap-2 p-4 border-transparent border-none bg-black flex items-center max-w-screen-lg mx-auto">
                 <button
                   className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
                   onClick={() => document.getElementById('file-input').click()}
