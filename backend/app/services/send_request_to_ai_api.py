@@ -9,7 +9,7 @@ from app.services.openai_service import (
     send_to_openai,
     send_to_gemini,
     send_to_openai_with_images,
-    send_to_gemini_with_images
+    send_to_gemini_with_files
 )
 from app.services.user_conversation_message_adder import (
     add_message_with_files_to_conversation,
@@ -54,6 +54,7 @@ async def send_request_to_ai_api(
         file_count = 0
         
         if files:
+            print("Files received:", files)
             logger.debug("Processing %d files", len(files))
             await add_message_with_files_to_conversation(
                 conversation_id=conversation_id,
@@ -76,10 +77,13 @@ async def send_request_to_ai_api(
                         has_images = True
                     elif file_type == "text/plain":
                         handle_text(f, content)
+                        has_images = True
                     elif file_type == "application/zip":
                         handle_zip(f, content)
+                        has_images = True
                     else:
                         handle_default(f, content)
+                        has_images = True
                 except Exception as e:
                     logger.error("Error processing file: %s", str(e))
         else:
@@ -91,7 +95,6 @@ async def send_request_to_ai_api(
 
         full_prompt = "\n\n".join([prompt.text for prompt in prompts_data]) + f"\n\n{user_message}"
         logger.debug("Full prompt: %s", full_prompt)
-        
         response = None
         if model_info == "openai":
             if has_images or file_count > 0:
@@ -104,9 +107,9 @@ async def send_request_to_ai_api(
         elif model_info == "gemini":
             if has_images or file_count > 0:
                 logger.debug(
-                    "Sending to Gemini with %d files (including %s images)", file_count, has_images
+                    "Sending to Gemini with %d files (including %s files)", file_count, has_images
                 )
-                response = send_to_gemini_with_images(content, full_prompt, conversation_id, user_id)
+                response = send_to_gemini_with_files(files, full_prompt, conversation_id, user_id)
             else:
                 response = send_to_gemini(full_prompt, conversation_id, user_id)
         elif model_info == "huggingface":
@@ -115,6 +118,7 @@ async def send_request_to_ai_api(
         else:
             raise ValueError(f"Invalid API choice: {model_info}")
 
+        print(f"Response from {model_info}: ", response)
         return {
             "response": response,
         }

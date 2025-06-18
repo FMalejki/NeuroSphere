@@ -189,39 +189,44 @@ def send_to_openai_with_images(
         )
         return error_msg
 
-def send_to_gemini_with_images(
-    content: List[Dict[str, Any]], 
-    text_prompt: str, 
-    conversation_id: str, 
+def send_to_gemini_with_files(
+    content: List[Dict[str, Any]],
+    text_prompt: str,
+    conversation_id: str,
     user_id: str = None
 ):
     """
-    Sending multimodal content (text + images + files) to Gemini API using direct REST API
+    Send multimodal content (text + files of any type, base64 encoded) to Gemini API using direct REST API.
     """
     try:
-        logger.info("Sending multimodal request to Gemini REST API")
-        
+        logger.info("Sending multimodal request to Gemini REST API (files supported)")
+
         parts = []
-        
-        parts.append({
-            "text": text_prompt
-        })
-        
+        if text_prompt:
+            parts.append({"text": text_prompt})
+
         for item in content:
-            if item.get("type") == "image_url" and "image_url" in item:
+            if "data" in item and "info" in item and "type" in item["info"]:
+                mime_type = item["info"]["type"]
+                base64_data = item["data"]
+                parts.append({
+                    "inline_data": {
+                        "mime_type": mime_type,
+                        "data": base64_data
+                    }
+                })
+            elif item.get("type") == "image_url" and "image_url" in item:
                 image_url = item["image_url"]["url"]
-                
                 if image_url.startswith("data:"):
                     mime_type = image_url.split(";")[0].replace("data:", "")
                     base64_data = image_url.split(",")[1]
-                    
                     parts.append({
                         "inline_data": {
                             "mime_type": mime_type,
                             "data": base64_data
                         }
                     })
-        
+
         payload = {
             "contents": [{
                 "parts": parts
@@ -231,7 +236,7 @@ def send_to_gemini_with_images(
                 "maxOutputTokens": 2048
             }
         }
-        
+
         api_url = (
             f"https://generativelanguage.googleapis.com/v1/models/"
             f"gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
@@ -242,39 +247,35 @@ def send_to_gemini_with_images(
             json=payload,
             timeout=30
         )
-        
+
         if response.status_code == 200:
             result = response.json()
-            
             if "candidates" in result and len(result["candidates"]) > 0:
                 if "content" in result["candidates"][0]:
                     content = result["candidates"][0]["content"]
                     if "parts" in content and len(content["parts"]) > 0:
                         ai_response = content["parts"][0].get("text", "")
-                        
                         asyncio.create_task(
                             add_message_to_conversation(
                                 conversation_id, ai_response, "assistant"
                             )
                         )
-                        
                         return ai_response
-            
+
             error_msg = "Could not extract response text from Gemini API"
             logger.error(error_msg)
-            logger.debug("API response: %s", result)
             asyncio.create_task(
                 add_message_to_conversation(conversation_id, error_msg, "error")
             )
             return error_msg
-        
+
         error_msg = f"Gemini API returned error {response.status_code}: {response.text}"
         logger.error(error_msg)
         asyncio.create_task(
             add_message_to_conversation(conversation_id, error_msg, "error")
         )
         return error_msg
-            
+
     except (requests.RequestException, ValueError, KeyError) as e:
         error_msg = f"Failed to connect to Gemini Vision API: {str(e)}"
         logger.error(error_msg)

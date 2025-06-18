@@ -15,7 +15,7 @@ def setup_logger():
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-    logger = logging.getLogger("neurosphereBackend")
+    logger = logging.getLogger("app")
     logger.setLevel(logging.INFO)
 
     # Całkiem spoko funkcjonalność, warto poczytać:
