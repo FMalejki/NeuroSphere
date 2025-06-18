@@ -166,6 +166,7 @@ async def update_message_with_files_to_conversation(
             "timestamp": datetime.now().isoformat(),
             "files": files or []
         }
+        logger.info("Adding message with files to conversation: %s", files)
         print(f"New message with {len(files) if files else 0} files")   
         filter_ = {"_id": ObjectId(conversation_id)} 
 

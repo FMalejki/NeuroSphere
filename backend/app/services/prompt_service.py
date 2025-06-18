@@ -7,6 +7,7 @@ import logging
 from fastapi import HTTPException
 from app.db.get_prompt_data import get_prompt_data
 from app.services.send_request_to_ai_api import send_request_to_ai_api
+from app.models.prompt_request_model import PromptRequestModel
 
 logger = logging.getLogger("app")
 
@@ -44,6 +45,19 @@ async def process_prompt_request(
     if not conversation_id:
         raise HTTPException(status_code=400, detail="conversation_id is required")
     
+    try:
+        prompt_request = PromptRequestModel(
+            prompt_ids=prompt_ids,
+            model_id=model_id,
+            user_message=user_message,
+            user_id=user_id,
+            conversation_id=conversation_id,
+            files=files
+        )
+    except ValueError as e:
+        logger.error("Error creating PromptRequestModel: %s", str(e))
+        raise HTTPException(status_code=400, detail=f"Invalid request parameters: {str(e)}")
+    
     prompts_data = []
     for prompt_id in prompt_ids:
         prompt_data = await get_prompt_data(prompt_id)
@@ -54,12 +68,8 @@ async def process_prompt_request(
     
     try:
         response = await send_request_to_ai_api(
-            prompts_data=prompts_data,
-            model_info=model_id,
-            user_message=user_message,
-            user_id=user_id,
-            conversation_id=conversation_id,
-            files=files
+            prompt_request=prompt_request,
+            prompts_data=prompts_data
         )
         return response
     except Exception as e:

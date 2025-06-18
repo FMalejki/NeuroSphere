@@ -5,6 +5,7 @@ from typing import Dict, List, Any
 import logging
 
 from app.models.prompt_model import PromptModel
+from app.models.prompt_request_model import PromptRequestModel
 from app.services.openai_service import (
     send_to_openai,
     send_to_gemini,
@@ -20,23 +21,15 @@ from app.handlers.file_handlers import handle_image, handle_text, handle_zip, ha
 logger = logging.getLogger("app")
 
 async def send_request_to_ai_api(
-    prompts_data: List[PromptModel],
-    model_info: str,
-    user_message: str,
-    user_id: str,
-    conversation_id: str,
-    files: List[Dict[str, Any]] = None
+    prompt_request: PromptRequestModel,
+    prompts_data: List[PromptModel]
 ) -> Dict[str, Any]:
     """
     Send user's request to the selected AI API with any attached files.
 
     Args:
+        prompt_request: PromptRequestModel containing all request parameters
         prompts_data: List of prompt models containing system instructions
-        model_info: The AI model to use (openai, gemini, etc.)
-        user_message: The user's message text
-        user_id: The ID of the user
-        conversation_id: The ID of the conversation
-        files: Optional list of file dictionaries
 
     Returns:
         Dictionary containing the AI's response
@@ -47,6 +40,13 @@ async def send_request_to_ai_api(
     """
     try:
         logger.debug("Inside send_request_to_ai_api")
+
+        # Extract fields from the prompt_request model
+        model_info = prompt_request.model_id
+        user_message = prompt_request.user_message
+        user_id = prompt_request.user_id
+        conversation_id = prompt_request.conversation_id
+        files = prompt_request.files
 
         content = [{"type": "text", "text": user_message}]
 
@@ -125,4 +125,4 @@ async def send_request_to_ai_api(
 
     except Exception as e:
         logger.error("Error in send_request_to_ai_api: %s", str(e))
-        raise Exception(f"Error while processing request with {model_info}: {str(e)}") from e
+        raise Exception(f"Error while processing request with {prompt_request.model_id}: {str(e)}") from e

@@ -29,7 +29,8 @@ Usage:
 import asyncio
 import os
 import logging
-from typing import List, Dict, Any
+import time
+from typing import List, Dict, Any, Optional
 
 import requests
 import openai
@@ -37,8 +38,11 @@ from dotenv import load_dotenv
 from google import genai
 
 from app.services.user_conversation_message_adder import add_message_to_conversation
+from app.models.response_model import (
+    AIResponse, AIResponseItem, ResponseStatus, 
+    ResponseSource, ResponseMetadata
+)
 
-# Configure logging
 logger = logging.getLogger("app")
 
 load_dotenv()
@@ -50,7 +54,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 HUGGING_FACE_API_KEY = os.getenv("HUGGING_FACE_API_KEY")
 
-# Log confirmation of loaded API keys
 logger.info("Loaded OpenAI API Key")
 logger.info("Loaded Gemini API Key")
 logger.info("Loaded Hugging Face API Key")
@@ -66,88 +69,193 @@ def build_payload(prompt: str, model: str = "gpt-3.5-turbo", max_tokens: int = 1
         "temperature": 0.7
     }
 
-def parse_response(response):
+def create_error_response(source: ResponseSource, message: str, conversation_id: Optional[str] = None, user_id: Optional[str] = None) -> AIResponse:
     """
-    Parse the response from the OpenAI API.
+    Create a standardized error response.
     """
-    try:
-        return response["choices"][0]["message"]["content"].strip()
-    except (KeyError, IndexError) as e:
-        raise ValueError(f"Failed to parse OpenAI response: {e}") from e
+    return AIResponse(
+        status=ResponseStatus.ERROR,
+        source=source,
+        message=message,
+        conversation_id=conversation_id,
+        user_id=user_id
+    )
 
 def send_to_openai(prompt: str, conversation_id: str, user_id: str = None):
     """
     Send the prompt to OpenAI API.
     """
     try:
+        start_time = time.time()
         payload = build_payload(prompt)
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
         response = client.chat.completions.create(**payload)
-
-        return parse_response(response)
+        
+        content = response.choices[0].message.content.strip()
+        processing_time = (time.time() - start_time) * 1000  # convert to ms
+        
+        ai_response = AIResponse(
+            status=ResponseStatus.SUCCESS,
+            source=ResponseSource.OPENAI,
+            items=[
+                AIResponseItem(
+                    content_type="text",
+                    content=content,
+                    role="assistant"
+                )
+            ],
+            metadata=ResponseMetadata(
+                model_name=response.model,
+                tokens_used=response.usage.total_tokens,
+                processing_time_ms=processing_time,
+                prompt_tokens=response.usage.prompt_tokens,
+                completion_tokens=response.usage.completion_tokens,
+                raw_response=response.model_dump()
+            ),
+            conversation_id=conversation_id,
+            user_id=user_id
+        )
+        
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, content, "assistant")
+        )
+        
+        return ai_response.to_external_format()
+        
     except (openai.OpenAIError, ValueError) as e:
         logger.error("Failed to connect to OpenAI API: %s", e)
+        error_message = f"Failed to connect to OpenAI API: {e}"
+        
         asyncio.create_task(
-            add_message_to_conversation(conversation_id, "Failed to connect to OpenAI API", "error")
+            add_message_to_conversation(conversation_id, error_message, "error")
         )
-        return f"Failed to connect to OpenAI API: {e}"
+        
+        error_response = create_error_response(
+            ResponseSource.OPENAI, 
+            error_message,
+            conversation_id,
+            user_id
+        )
+        
+        return error_response.to_external_format()
 
 def send_to_gemini(prompt: str, conversation_id: str, user_id: str = None):
     """
     Send the prompt to Gemini API using Google GenAI.
     """
     try:
-        # Initialize the GenAI client
+        start_time = time.time()
+        
         client = genai.Client(api_key=GEMINI_API_KEY)
         
-        # Generate content using the Gemini model
+        model_name = "gemini-2.0-flash"
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model=model_name,
             contents=prompt
         )
         
-        logger.debug("Before add message to conversation")
-        asyncio.create_task(
-            add_message_to_conversation(conversation_id, response.text.strip(), "assistant")
+        content = response.text.strip()
+        processing_time = (time.time() - start_time) * 1000  # convert to ms
+        
+        ai_response = AIResponse(
+            status=ResponseStatus.SUCCESS,
+            source=ResponseSource.GEMINI,
+            items=[
+                AIResponseItem(
+                    content_type="text",
+                    content=content,
+                    role="assistant"
+                )
+            ],
+            metadata=ResponseMetadata(
+                model_name=model_name,
+                processing_time_ms=processing_time,
+                raw_response={"text": content}
+            ),
+            conversation_id=conversation_id,
+            user_id=user_id
         )
-
-        return response.text.strip()
+        
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, content, "assistant")
+        )
+        
+        return ai_response.to_external_format()
+        
     except Exception as e:
         logger.error("Failed to connect to Gemini API: %s", e)
+        error_message = f"Failed to connect to Gemini API: {e}"
+        
         asyncio.create_task(
-            add_message_to_conversation(conversation_id, "Failed to connect to Gemini API", "error")
+            add_message_to_conversation(conversation_id, error_message, "error")
         )
-        return f"Failed to connect to Gemini API: {e}"
+        
+        error_response = create_error_response(
+            ResponseSource.GEMINI, 
+            error_message,
+            conversation_id,
+            user_id
+        )
+        
+        return error_response.to_external_format()
 
 def send_to_hugging_face(prompt: str, conversation_id: str, user_id: str = None):
     """
     Send the prompt to Hugging Face API.
     """
     try:
+        start_time = time.time()
+        
         url = "https://api-inference.huggingface.co/models/bigscience/bloom"
         headers = {"Authorization": f"Bearer {HUGGING_FACE_API_KEY}"}
         data = {"inputs": prompt}
         response = requests.post(url, headers=headers, json=data, timeout=30)
         response.raise_for_status()
-        asyncio.create_task(
-            add_message_to_conversation(
-                conversation_id, 
-                response.json()[0]["generated_text"].strip(), 
-                "assistant"
-            )
+        
+        content = response.json()[0]["generated_text"].strip()
+        processing_time = (time.time() - start_time) * 1000  # convert to ms
+        
+        ai_response = AIResponse(
+            status=ResponseStatus.SUCCESS,
+            source=ResponseSource.HUGGING_FACE,
+            items=[
+                AIResponseItem(
+                    content_type="text",
+                    content=content,
+                    role="assistant"
+                )
+            ],
+            metadata=ResponseMetadata(
+                model_name="bigscience/bloom",
+                processing_time_ms=processing_time,
+                raw_response=response.json()
+            ),
+            conversation_id=conversation_id,
+            user_id=user_id
         )
-
-        return response.json()[0]["generated_text"].strip()
+        
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, content, "assistant")
+        )
+        
+        return ai_response.to_external_format()
+        
     except (requests.RequestException, ValueError, KeyError, IndexError) as e:
         logger.error("Failed to connect to Hugging Face API: %s", e)
+        error_message = f"Failed to connect to Hugging Face API: {e}"
+        
         asyncio.create_task(
-            add_message_to_conversation(
-                conversation_id, 
-                "Failed to connect to Hugging Face API", 
-                "error"
-            )
+            add_message_to_conversation(conversation_id, error_message, "error")
         )
-        return f"Failed to connect to Hugging Face API: {e}"
+        
+        error_response = create_error_response(
+            ResponseSource.HUGGING_FACE, 
+            error_message,
+            conversation_id,
+            user_id
+        )
+        
+        return error_response.to_external_format()
     
 def send_to_openai_with_images(
     content: List[Dict[str, Any]], 
@@ -158,36 +266,69 @@ def send_to_openai_with_images(
     Send multimodal content (text + images) to OpenAI API.
     """
     try:
+        start_time = time.time()
         logger.info("Sending multimodal request to OpenAI")
         
         # Use the OpenAI client
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
         
         # Format the request for OpenAI
+        model_name = "gpt-4-vision-preview"
         response = client.chat.completions.create(
-            model="gpt-4-vision-preview",
+            model=model_name,
             messages=[
                 {"role": "user", "content": content}
             ],
             max_tokens=1000
         )
         
-        # Extract the response text
-        ai_response = response.choices[0].message.content.strip()
+        content = response.choices[0].message.content.strip()
+        processing_time = (time.time() - start_time) * 1000  # convert to ms
         
-        # Add to conversation history
-        asyncio.create_task(
-            add_message_to_conversation(conversation_id, ai_response, "assistant")
+        ai_response = AIResponse(
+            status=ResponseStatus.SUCCESS,
+            source=ResponseSource.OPENAI,
+            items=[
+                AIResponseItem(
+                    content_type="text",
+                    content=content,
+                    role="assistant"
+                )
+            ],
+            metadata=ResponseMetadata(
+                model_name=model_name,
+                tokens_used=response.usage.total_tokens,
+                processing_time_ms=processing_time,
+                prompt_tokens=response.usage.prompt_tokens,
+                completion_tokens=response.usage.completion_tokens,
+                raw_response=response.model_dump()
+            ),
+            conversation_id=conversation_id,
+            user_id=user_id
         )
         
-        return ai_response
+        asyncio.create_task(
+            add_message_to_conversation(conversation_id, content, "assistant")
+        )
+        
+        return ai_response.to_external_format()
+        
     except (openai.OpenAIError, ValueError) as e:
-        error_msg = f"Failed to connect to OpenAI Vision API: {str(e)}"
-        logger.error(error_msg)
+        error_message = f"Failed to connect to OpenAI Vision API: {str(e)}"
+        logger.error(error_message)
+        
         asyncio.create_task(
-            add_message_to_conversation(conversation_id, error_msg, "error")
+            add_message_to_conversation(conversation_id, error_message, "error")
         )
-        return error_msg
+        
+        error_response = create_error_response(
+            ResponseSource.OPENAI, 
+            error_message,
+            conversation_id,
+            user_id
+        )
+        
+        return error_response.to_external_format()
 
 def send_to_gemini_with_files(
     content: List[Dict[str, Any]],
@@ -199,6 +340,7 @@ def send_to_gemini_with_files(
     Send multimodal content (text + files of any type, base64 encoded) to Gemini API using direct REST API.
     """
     try:
+        start_time = time.time()
         logger.info("Sending multimodal request to Gemini REST API (files supported)")
 
         parts = []
@@ -237,9 +379,10 @@ def send_to_gemini_with_files(
             }
         }
 
+        model_name = "gemini-1.5-flash"
         api_url = (
             f"https://generativelanguage.googleapis.com/v1/models/"
-            f"gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+            f"{model_name}:generateContent?key={GEMINI_API_KEY}"
         )
         response = requests.post(
             api_url,
@@ -248,41 +391,89 @@ def send_to_gemini_with_files(
             timeout=30
         )
 
+        processing_time = (time.time() - start_time) * 1000  # convert to ms
+
         if response.status_code == 200:
             result = response.json()
             if "candidates" in result and len(result["candidates"]) > 0:
                 if "content" in result["candidates"][0]:
-                    content = result["candidates"][0]["content"]
-                    if "parts" in content and len(content["parts"]) > 0:
-                        ai_response = content["parts"][0].get("text", "")
-                        asyncio.create_task(
-                            add_message_to_conversation(
-                                conversation_id, ai_response, "assistant"
-                            )
+                    content_data = result["candidates"][0]["content"]
+                    if "parts" in content_data and len(content_data["parts"]) > 0:
+                        content = content_data["parts"][0].get("text", "")
+                        
+                        ai_response = AIResponse(
+                            status=ResponseStatus.SUCCESS,
+                            source=ResponseSource.GEMINI,
+                            items=[
+                                AIResponseItem(
+                                    content_type="text",
+                                    content=content,
+                                    role="assistant"
+                                )
+                            ],
+                            metadata=ResponseMetadata(
+                                model_name=model_name,
+                                processing_time_ms=processing_time,
+                                raw_response=result
+                            ),
+                            conversation_id=conversation_id,
+                            user_id=user_id
                         )
-                        return ai_response
+                        
+                        asyncio.create_task(
+                            add_message_to_conversation(conversation_id, content, "assistant")
+                        )
+                        
+                        return ai_response.to_external_format()
 
-            error_msg = "Could not extract response text from Gemini API"
-            logger.error(error_msg)
+            error_message = "Could not extract response text from Gemini API"
+            logger.error(error_message)
+            
             asyncio.create_task(
-                add_message_to_conversation(conversation_id, error_msg, "error")
+                add_message_to_conversation(conversation_id, error_message, "error")
             )
-            return error_msg
+            
+            error_response = create_error_response(
+                ResponseSource.GEMINI, 
+                error_message,
+                conversation_id,
+                user_id
+            )
+            
+            return error_response.to_external_format()
 
-        error_msg = f"Gemini API returned error {response.status_code}: {response.text}"
-        logger.error(error_msg)
+        error_message = f"Gemini API returned error {response.status_code}: {response.text}"
+        logger.error(error_message)
+        
         asyncio.create_task(
-            add_message_to_conversation(conversation_id, error_msg, "error")
+            add_message_to_conversation(conversation_id, error_message, "error")
         )
-        return error_msg
+        
+        error_response = create_error_response(
+            ResponseSource.GEMINI, 
+            error_message,
+            conversation_id,
+            user_id
+        )
+        
+        return error_response.to_external_format()
 
     except (requests.RequestException, ValueError, KeyError) as e:
-        error_msg = f"Failed to connect to Gemini Vision API: {str(e)}"
-        logger.error(error_msg)
+        error_message = f"Failed to connect to Gemini Vision API: {str(e)}"
+        logger.error(error_message)
+        
         asyncio.create_task(
-            add_message_to_conversation(conversation_id, error_msg, "error")
+            add_message_to_conversation(conversation_id, error_message, "error")
         )
-        return error_msg
+        
+        error_response = create_error_response(
+            ResponseSource.GEMINI, 
+            error_message,
+            conversation_id,
+            user_id
+        )
+        
+        return error_response.to_external_format()
 
 def test_all_apis():
     """
