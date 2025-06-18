@@ -1,60 +1,47 @@
-from pydantic import BaseModel
+"""
+Module containing Pydantic models for sellers in the NeuroSphere application.
+These models define the structure for seller data validation and serialization.
+"""
 from typing import List, Optional
+from pydantic import BaseModel
 from app.models.product_model import Product
 
-class Opinion_S(BaseModel):
+
+class OpinionS(BaseModel):
+    """
+    Model representing an opinion about a seller.
+    Contains rating and optional content.
+    """
     id: int
-    rating: int 
+    rating: int
     content: Optional[str] = None
 
+
 class SellerBase(BaseModel):
+    """
+    Base model with common seller attributes.
+    Contains name and optional description.
+    """
     name: str
     description: Optional[str] = None
 
+
 class SellerCreate(SellerBase):
+    """
+    Model for creating a new seller.
+    Extends SellerBase with products, opinions, and public key.
+    """
     products: List[Product] = []
-    opinions: List[Opinion_S] = []
+    opinions: List[OpinionS] = []
     public_key: str
+
 
 class Seller(SellerBase):
+    """
+    Complete seller model including database ID.
+    Used for responses and data retrieval.
+    """
     id: int
     products: List[Product] = []
-    opinions: List[Opinion_S] = []
+    opinions: List[OpinionS] = []
     public_key: str
-
-
-#from fastapi import FastAPI, HTTPException
-#from seller_model import Seller, SellerCreate
-#from typing import List
-#
-#app = FastAPI()
-#
-##### dziado-symulacja bazy danych ####
-#sellers_db: List[Seller] = []
-#next_seller_id = 1
-#### do wywalenia po dodaniu mongoDB ###
-#
-#@app.post("/sellers/", response_model=Seller)
-#def create_seller(seller_data: SellerCreate):
-#    global next_seller_id
-#    seller = Seller(
-#        id=next_seller_id,
-#        name=seller_data.name,
-#        description=seller_data.description,
-#        products=seller_data.products,
-#        opinions=seller_data.opinions,
-#    )
-#    sellers_db.append(seller)
-#    next_seller_id += 1
-#    return seller
-#
-#@app.get("/sellers/", response_model=List[Seller])
-#def list_sellers():
-#    return sellers_db
-#
-#@app.get("/sellers/{seller_id}", response_model=Seller)
-#def get_seller(seller_id: int):
-#    for seller in sellers_db:
-#        if seller.id == seller_id:
-#            return seller
-#    raise HTTPException(status_code=404, detail="Seller not found")

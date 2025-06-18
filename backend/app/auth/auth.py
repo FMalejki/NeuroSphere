@@ -1,8 +1,17 @@
-from fastapi import HTTPException
-from app.models.user_model import UserLogin
-from pymongo import MongoClient
-from dotenv import load_dotenv
+"""
+Authentication module for user login functionality.
+
+This module handles user authentication against the MongoDB database,
+supporting login via either email or username.
+"""
 import os
+
+from fastapi import HTTPException
+from dotenv import load_dotenv
+from pymongo import MongoClient
+
+from app.models.user_model import UserLogin
+
 
 # Load environment variables
 load_dotenv()
@@ -16,6 +25,9 @@ db = client[MONGO_DB_NAME]
 users_collection = db["users"]
 
 def authenticate_user(login_data: UserLogin):
+    """
+    User authentication
+    """
     # Check if the identifier is an email or username
     if "@" in login_data.identifier:  # If the identifier contains '@', treat it as an email
         user = users_collection.find_one({"email": login_data.identifier})

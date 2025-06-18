@@ -1,6 +1,14 @@
+"""Module for defining the prompt data model used in the application."""
+
 from pydantic import BaseModel
-from typing import Optional, Dict
 
 class PromptModel(BaseModel):
+    """
+    Data model representing a prompt.
+    
+    Attributes:
+        id: Unique identifier for the prompt
+        text: The content of the prompt
+    """
     id: str
     text: str

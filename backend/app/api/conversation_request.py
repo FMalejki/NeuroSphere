@@ -1,24 +1,33 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
-from bson import ObjectId
-from datetime import datetime
-
-from app.models.conversation_model import Conversation, ConversationCreate, Message
-from app.db.get_conversation_info import create_conversation_in_db, get_conversation_info
-from app.services.openai_service import parse_response
-from app.db.get_conversation_info import connect_to_mongo
-from bson.binary import Binary
+"""
+Endpoints for chat module 
+"""
 import base64
+from datetime import datetime
+import logging
+
+from fastapi import APIRouter, HTTPException
+from bson import ObjectId
+from bson.binary import Binary
+
+from app.models.conversation_model import Conversation
+from app.db.get_conversation_info import create_conversation_in_db, get_conversation_info
+from app.db.get_conversation_info import connect_to_mongo
+
 
 router = APIRouter()
 
+logger = logging.getLogger("app")
+
 @router.post("/conversations/", response_model=Conversation)
 async def create_conversation(conv_data: dict):
+    """
+    Creates conversation in the database with the data provided from frontend.
+    If no title is provided, it generates a default title based on the chosen model and date.
+    """
     try:
-        print(conv_data)
-        title = conv_data.get('conversation_title', 
-                            f"{conv_data['chosen_model']} Chat - {datetime.now().strftime('%b %d, %Y')}")
-        
+        logger.info("Creating new conversation with data: %s", conv_data)
+        title = conv_data.get('conversation_title',
+        f"{conv_data['chosen_model']} Chat - {datetime.now().strftime('%b %d, %Y')}")    
         conv_dict = {
             "user_id": conv_data['user_id'],
             "chosen_model": conv_data['chosen_model'],
@@ -31,14 +40,15 @@ async def create_conversation(conv_data: dict):
         return conv_final
     except HTTPException as e:
         raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
-
-
+    except (TypeError, ValueError) as e:
+        raise HTTPException(status_code=500, detail=f'Error: {str(e)}') from e
 
 @router.get("/conversations/{user_id}")
 async def get_conversation(user_id: str):
-    print("User ID:", user_id)
+    """
+    Retrieves conversations for a given user ID.
+    If no conversations are found, it returns an empty list instead of a 404 error.
+    """
     got_conversations = await get_conversation_info(user_id)
     if not got_conversations:
         return []  # Return empty list instead of 404
@@ -47,87 +57,72 @@ async def get_conversation(user_id: str):
 
 @router.get("/conversation/{conversation_id}")
 async def get_single_conversation(conversation_id: str):
+    """
+    Retrieves a complete conversation by ID, including all messages with their text content and files.
+    
+    Args:
+        conversation_id (str): The ID of the conversation to retrieve
+        
+    Returns:
+        dict: The complete conversation data with messages
+        
+    Raises:
+        ValueError: If conversation is not found
+        RuntimeError: If there's a database error
+    """
+    conversation_collection = await connect_to_mongo()
     try:
-        conversation_collection = await connect_to_mongo()
+        # Convert to ObjectId for MongoDB query
+        oid = ObjectId(conversation_id)
+        conversation = await conversation_collection.find_one({"_id": oid})
         
-        if not ObjectId.is_valid(conversation_id):
-            raise HTTPException(status_code=400, detail="Invalid conversation ID")
-            
-        document = await conversation_collection.find_one({"_id": ObjectId(conversation_id)})
+        if not conversation:
+            raise ValueError(f"Conversation with ID {conversation_id} not found")
         
-        if not document:
-            raise HTTPException(status_code=404, detail="Conversation not found")
-            
-        messages = document.get("messages", [])
-        for message in messages:
-            if "files" in message and message["files"]:
-                for file in message["files"]:
-                    if "data" in file and file["data"]:
-                        if isinstance(file["data"], Binary) or isinstance(file["data"], bytes):
-                            try:
-                                file["data"] = base64.b64encode(file["data"]).decode('utf-8')
-                            except Exception as e:
-                                print(f"Failed to encode file data: {e}")
-                                file["data"] = None
-        
+        # Format the conversation data for the frontend
         formatted_conversation = {
-            "id": str(document["_id"]),
-            "user_id": document["user_id"],
-            "chosen_model": document["chosen_model"],
-            "chosen_prompts": document.get("chosen_prompts", []),
-            "conversation_title": document.get("conversation_title", "Chat"),
-            "parameters": document.get("parameters", {}),
-            "messages": messages
+            "id": str(conversation["_id"]),
+            "user_id": conversation.get("user_id", ""),
+            "chosen_model": conversation.get("chosen_model", ""),
+            "chosen_prompts": conversation.get("chosen_prompts", []),
+            "conversation_title": conversation.get("conversation_title", "Untitled"),
+            "parameters": conversation.get("parameters", {}),
+            "messages": []
         }
         
+        # Process all messages, ensuring both text content and files are included
+        for msg in conversation.get("messages", []):
+            message_data = {
+                "role": msg.get("role", "unknown"),
+                "content": msg.get("content", ""),  # Ensure text content is included
+                "timestamp": msg.get("timestamp", datetime.now().isoformat())
+            }
+            
+            # Add files if present
+            if "files" in msg and msg["files"]:
+                # Convert binary data back to base64 for frontend display
+                processed_files = []
+                for file in msg["files"]:
+                    if "data" in file and isinstance(file["data"], bytes):
+                        # Convert binary data to base64 string
+                        file_data = base64.b64encode(file["data"]).decode('utf-8')
+                    else:
+                        file_data = file.get("data", "")
+                    
+                    processed_files.append({
+                        "name": file.get("name", "unknown"),
+                        "type": file.get("type", "application/octet-stream"),
+                        "size": file.get("size", 0),
+                        "data": file_data
+                    })
+                message_data["files"] = processed_files
+            
+            formatted_conversation["messages"].append(message_data)
+        
+        logger.info(f"Retrieved conversation {conversation_id} with {len(formatted_conversation['messages'])} messages")
         return formatted_conversation
-    except HTTPException as e:
-        raise e
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
-
-
-
-#return await get_conversation_info(conversation_id) ## do wyje 
-# if not ObjectId.is_valid(conversation_id):
-#    raise HTTPException(status_code=400, detail="Invalid conversation ID")
-
-
-
-
-
-#from fastapi import APIRouter, HTTPException
-#from typing import List
-#from bson import ObjectId
-#
-#from app.models.conversation_model import ConversationCreate, Conversation, ConversationBase
-#from app.db.get_conversation_info import conversation_collection  
-#
-#router = APIRouter()
-#
-#@router.post("/conversations/", response_model=ConversationBase)
-#async def create_conversation(conv_data: ConversationCreate):
-#    conv_dict = conv_data#.dict()
-#    result = await conversation_collection.insert_one(conv_dict)
-#    saved = await conversation_collection.find_one({"_id": result.inserted_id})
-#    return Conversation(**saved)
-#
-#@router.get("/conversations/{conversation_id}", response_model=Conversation)
-#async def get_conversation(conversation_id: str):
-#    if not ObjectId.is_valid(conversation_id):
-#        raise HTTPException(status_code=400, detail="Invalid conversation ID")
-#
-#    conversation = await conversation_collection.find_one({"_id": ObjectId(conversation_id)})
-#    if not conversation:
-#        raise HTTPException(status_code=404, detail="Conversation not found")
-#
-#    return Conversation(**conversation)
-#
-#@router.get("/conversations/user/{user_id}", response_model=List[Conversation])
-#async def get_user_conversations(user_id: int):
-#    cursor = conversation_collection.find({"user_id": user_id})
-#    conversations = [Conversation(**doc) async for doc in cursor]
-#    return conversations
-
-
-
+        logger.error(f"Error retrieving conversation {conversation_id}: {str(e)}")
+        raise RuntimeError(f"Error retrieving conversation: {e}") from e
+    
