@@ -379,9 +379,12 @@ const handleSendMessage = async () => {
   } catch (err) {
     console.error('Error while sending the message:', err);
     alert('An error occurred while sending the message.');
-  } finally {
+  } 
+  
+  finally {
     setIsLoading(false);
     setFiles([]);
+    console.log('Files after send:', files);
   }
 };
 const toggleSidebar = () => {
@@ -577,9 +580,41 @@ const toggleSidebar = () => {
             )}
             <div ref={messagesEndRef} />
           </div>
+
+          {files.length > 0 && (
+            <div className="flex gap-3 px-32 pb-2 justify-center">
+              {files.map((file, idx) => (
+                <div key={idx} className="flex items-center gap-1 bg-transparent rounded p-1">
+                  {file.type.startsWith('image/') ? (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  ) : (
+                    <svg className="w-8 h-8 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  )}
+                  <span className="text-xs text-white truncate max-w-[80px]">{file.name}</span>
+                  <button
+                    className="text-red-400 hover:text-red-600 ml-1"
+                    onClick={() => handleRemoveFile(idx)}
+                    title="Usuń"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+
+
+
             {/* Move the message input controls here, below the messages */}
             {currentChat && (
-              <div className="flex gap-2 p-4 border-transparent border-none bg-black items-center sticky bottom-0 z-40 max-w-[80%] w-full mx-auto">
+              <div className="flex gap-2 p-4 border-transparent border-none bg-transparent items-center sticky bottom-0 z-40 max-w-[80%] w-full mx-auto">
                 <button
                   className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
                   onClick={() => document.getElementById('file-input').click()}
@@ -645,7 +680,7 @@ const toggleSidebar = () => {
                   value={chatTitle}
                   onChange={(e) => setChatTitle(e.target.value)}
                   placeholder="My new conversation"
-                  className="w-full p-2 bg-black text-white rounded-md mb-4"
+                  className="w-full p-2 bg-transparent text-white rounded-md mb-4"
                 />
                 
                 {/* Model selection */}
