@@ -21,9 +21,9 @@ const AllProducts = () => {
           </button>
         </div>
         <div className="flex flex-col items-center w-full">
-          <div className="w-28 h-0.5 bg-white/30 mt-2"></div>
+          <div className="w-28 h-0.5 bg-violet-300 mt-2"></div>
           <p className="text-gray-300 mt-4">
-            Explore our marketplace of AI models, prompts and tools
+          Everything starts with the perfect prompt — discover it here!
           </p>
         </div>
         <div className="py-12 w-full">

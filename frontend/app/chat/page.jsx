@@ -514,7 +514,7 @@ const toggleSidebar = () => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-32 pt-32 space-y-6">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center text-center text-white h-full">
+              <div className="flex flex-col items-center justify-center text-center text-white pt-20">
               <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
               <p className="text-gray-400 max-w-md">
                 Start a conversation with our AI model
@@ -679,8 +679,8 @@ const toggleSidebar = () => {
                   type="text"
                   value={chatTitle}
                   onChange={(e) => setChatTitle(e.target.value)}
-                  placeholder="My new conversation"
-                  className="w-full p-2 bg-transparent text-white rounded-md mb-4"
+                  placeholder="New conversation"
+                  className="w-full p-2 bg-[#2e2e2e] text-white rounded-md mb-4"
                 />
                 
                 {/* Model selection */}

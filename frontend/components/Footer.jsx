@@ -52,7 +52,7 @@ const Footer = () => {
           <div>
             <h2 className="font-medium text-white mb-5">Contact</h2>
             <div className="text-sm space-y-2">
-              <p>support@neurosphere.ai</p>
+              <p>contact.neurosphere.ai@proton.me</p>
               <div className="flex space-x-4 mt-3">
                 <Link
                   href="https://facebook.com/neurosphere"
