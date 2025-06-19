@@ -509,7 +509,7 @@ const toggleSidebar = () => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-32 pb-0 space-y-6">
+          <div className="flex-1 overflow-y-auto px-32 pt-32 space-y-6">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center text-white h-full">
               <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
@@ -576,9 +576,10 @@ const toggleSidebar = () => {
               </div>
             )}
             <div ref={messagesEndRef} />
+          </div>
             {/* Move the message input controls here, below the messages */}
             {currentChat && (
-              <div className="flex bottom-0 left-0 right-0 gap-2 p-4 border-transparent border-none bg-black flex items-center max-w-screen-lg mx-auto">
+              <div className="flex gap-2 p-4 border-transparent border-none bg-black items-center sticky bottom-0 z-40 max-w-[80%] w-full mx-auto">
                 <button
                   className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
                   onClick={() => document.getElementById('file-input').click()}
@@ -598,7 +599,7 @@ const toggleSidebar = () => {
                   onChange={handleInputChange}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder="Write a message..."
-                  className="flex-1 p-3 bg-black text-white border border-violet-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="flex-1 p-3 bg-transparent text-white border border-violet-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
                   disabled={isLoading}
                 />
                 <button
@@ -610,7 +611,8 @@ const toggleSidebar = () => {
                 </button>
               </div>
             )}
-          </div>
+
+
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-[#121212] p-6 rounded-lg w-96 relative">
