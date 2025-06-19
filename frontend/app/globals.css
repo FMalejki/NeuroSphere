@@ -89,4 +89,20 @@
   }
 }
 
+.animated-chat-border::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: linear-gradient(270deg, #c4b5fd, #7c3aed, #c4b5fd);
+  background-size: 400% 400%;
+  animation: gradientFade 4s ease infinite;
+  border-radius: 2px;
+  pointer-events: none;
+}
 
+@keyframes gradientFade {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

@@ -393,14 +393,14 @@ const toggleSidebar = () => {
 
 
   return (
-    <div className="flex flex-col h-screen bg-black">
+    <div className="flex flex-col h-screen bg-transparent">
       <Navbar />
 
       {/* Main chat container */}
-      <div className="flex-1 flex overflow-hidden pt-16">
+      <div className="flex-1 flex overflow-hidden">
         {/* Left panel - chat list */}
         {isSidebarOpen && (
-          <div className="w-64 bg-black flex flex-col h-full md:flex"> {/* Removed `hidden` */}
+          <div className="w-64 bg-transparent flex flex-col h-full md:flex"> {/* Removed `hidden` */}
             <div className="p-4">
               <button
                 onClick={handleNewChat}
@@ -434,7 +434,7 @@ const toggleSidebar = () => {
                   <button
                     key={chat.id}
                     className={`w-full text-left px-3 py-2 rounded-md hover:bg-black ${
-                      currentChat && currentChat.id === chat.id ? 'bg-black' : ''
+                      currentChat && currentChat.id === chat.id ? 'bg-transparent' : ''
                     } text-white/80 my-1 flex items-center gap-2`}
                     onClick={() => handleSelectConversation(chat)}
                   >
@@ -466,10 +466,10 @@ const toggleSidebar = () => {
         )}
 
         {/* Main chat area */}
-        <div className="flex-1 flex flex-col bg-black border-violet-300">
+        <div className="flex-1 flex flex-col bg-transparent border-violet-300">
           {/* Sidebar toggle icon */}
           <div
-            className={`absolute top-20 transition-all ${
+            className={`absolute top-20 pt-2 transition-all ${
               isSidebarOpen ? 'left-70' : 'left-4'
             } z-50`}
           >

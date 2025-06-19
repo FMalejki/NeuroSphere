@@ -4,13 +4,20 @@ import Link from 'next/link';
 import { useAppContext } from '@/context/AppContext';
 import { useClerk, UserButton } from '@clerk/nextjs';
 import { CartIcon, BagIcon, HomeIcon, BoxIcon } from '@/assets/assets';
+import { usePathname } from 'next/navigation';
+
 
 const Navbar = () => {
   const { isSeller, router, user } = useAppContext();
   const { openSignIn } = useClerk();
+  const pathname = usePathname();
+  const isChat = pathname === '/chat';
 
   return (
-    <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-2 md:px-4 lg:px-6 py-5 text-white">
+      <nav
+        className={`absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-2 md:px-4 lg:px-6 py-5 text-white 
+        ${isChat ? 'border-b-0 relative animated-chat-border' : ''}`}
+      >
       <div
         className="font-bold text-2xl text-violet-300 tracking-wider cursor-pointer pl-2"
         onClick={() => router.push('/')}
