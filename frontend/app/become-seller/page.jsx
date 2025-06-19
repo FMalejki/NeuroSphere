@@ -51,7 +51,7 @@ export default function BecomeSeller() {
         {isSeller ? (
           <div>
             <p className="mb-4">
-              You are already a seller! Now you can add your products.
+              You are already a seller! Now you can add your prompts.
             </p>
             <button
               onClick={() => router.push('/seller')}
@@ -63,7 +63,7 @@ export default function BecomeSeller() {
         ) : (
           <div>
             <p className="mb-6 text-gray-300">
-              Do you want to sell your products on our platform? Join the group
+              Do you want to sell your prompts on our platform? Join the group
               of sellers and gain access to tools that will help you run your
               online business.
             </p>
@@ -81,7 +81,7 @@ export default function BecomeSeller() {
             </button>
 
             <p className="mt-4 text-sm text-gray-400">
-              As a seller, you will be able to add products, manage orders and
+              As a seller, you will be able to add prompts, manage orders and
               develop your business.
             </p>
           </div>
