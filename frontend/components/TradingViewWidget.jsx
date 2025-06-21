@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, memo } from 'react';
+import GeckoTerminalWidget from '@/components/GeckoTerminalWidget';
 
-function TradingViewWidget() {
+function TradingViewWidget({ useGecko = true, symbol = "NASDAQ:AAPL" }) {
   const container = useRef();
-  const scriptAdded = useRef(false); // Flaga, aby upewnić się, że skrypt jest dodawany tylko raz
+  const scriptAdded = useRef(false);
 
   useEffect(() => {
-    if (scriptAdded.current) return; // Jeśli skrypt został już dodany, zakończ
+    if (useGecko) return;
+    if (scriptAdded.current) return;
 
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
@@ -14,7 +16,7 @@ function TradingViewWidget() {
     script.innerHTML = `
       {
         "autosize": true,
-        "symbol": "NASDAQ:AAPL",
+        "symbol": "${symbol}",
         "interval": "D",
         "timezone": "Etc/UTC",
         "theme": "dark",
@@ -25,19 +27,16 @@ function TradingViewWidget() {
         "support_host": "https://www.tradingview.com"
       }`;
     container.current.appendChild(script);
-    scriptAdded.current = true; // Ustaw flagę, aby zapobiec wielokrotnemu dodawaniu skryptu
-  }, []);
+    scriptAdded.current = true;
+  }, [useGecko, symbol]);
+
+  if (useGecko) {
+    return <GeckoTerminalWidget />;
+  }
 
   return (
     <div className="tradingview-widget-container" ref={container} style={{ height: "90%", width: "100%" }}>
       <div className="tradingview-widget-container__widget" style={{ height: "100%", width: "100%" }}></div>
-      {/*
-      <div className="tradingview-widget-copyright">
-        <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
-          <span className="blue-text">Track all markets on TradingView</span>
-        </a>
-      </div>
-      */}
     </div>
   );
 }

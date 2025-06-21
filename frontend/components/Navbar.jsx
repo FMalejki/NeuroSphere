@@ -24,7 +24,7 @@ const Navbar = () => {
       >
         NeuroSphere
       </div>
-      <div className="flex items-center gap-4 lg:gap-8 max-md:hidden">
+      <div className="flex justify-between  gap-4 lg:gap-8 max-md:hidden">
         <Link href="/" className="hover:text-blue-300 transition">
           Home
         </Link>
@@ -34,6 +34,7 @@ const Navbar = () => {
         <Link href="/chat" className="hover:text-blue-300 transition">
           AI Chat
         </Link>
+       
 {/*
         {isSeller && (
           <button

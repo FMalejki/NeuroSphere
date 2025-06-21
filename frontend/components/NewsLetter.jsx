@@ -16,7 +16,7 @@ const NewsLetter = () => {
         <div className="flex flex-col md:flex-row gap-2 md:gap-0">
           <input
             type="email"
-            className="w-full md:flex-grow h-11 md:h-12 bg-white/5 focus:bg-white/10 border border-white/10 focus:border-primary rounded-lg md:rounded-r-none px-4 outline-none text-white"
+            className="w-full md:flex-grow h-11 md:h-12 bg-black focus:bg-white/10 border border-white/10 focus:border-primary rounded-lg md:rounded-r-md px-4 outline-none text-white"
             placeholder="Your email address"
           />
           <Button>Subscribe</Button>
