@@ -115,14 +115,14 @@ useEffect(() => {
         
         setChats(processedData);
         
-        if (processedData.length > 0) {
-          const firstChatId = processedData[0].id;
-          console.log(`Loading messages for first chat: ${firstChatId}`);
-          await fetchConversationMessages(firstChatId);
-          
-          const updatedChat = processedData.find(chat => chat.id === firstChatId);
-          setCurrentChat(updatedChat);
-        }
+       // if (processedData.length > 0) {
+       //   const firstChatId = processedData[0].id;
+       //   console.log(`Loading messages for first chat: ${firstChatId}`);
+       //   await fetchConversationMessages(firstChatId);
+       //   
+       //   const updatedChat = processedData.find(chat => chat.id === firstChatId);
+       //   setCurrentChat(updatedChat);
+       // }
       } else {
         console.error("API returned non-array data:", data);
         setChats([]);
@@ -524,14 +524,30 @@ const toggleSidebar = () => {
             </button>
           </div>
 
+
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-32 pt-32 space-y-6">
-            {messages.length === 0 ? (
+          <div className="flex-1 overflow-y-auto px-32 pt-8 space-y-6">
+            {!currentChat ? (
               <div className="flex flex-col items-center justify-center text-center text-white pt-20">
               <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
-              <p className="text-gray-400 max-w-md">
-                Start a conversation with our AI model
-              </p>
+              <div className="text-gray-400 max-w-md space-y-5">
+                <p>
+                  Start a conversation with the AI model of your choice — including OpenAI, Gemini and many others!
+                </p>
+                <p>
+                  Whether you’re generating text, creating images, producing videos, writing code or building complex ideas - everything starts with prompts. You stay in control — from creativity to execution.
+                </p>
+                <p>
+                  Select the best model for your task, customize your experience and explore the full potential of generative AI. NeuroSphere gives you the tools — you bring the vision.
+                </p>
+                <hr className="border-gray-600" />
+                <p className="font-semibold">
+                  Unused tokens?  
+                </p>
+                <p>
+                  You can resell them anytime on the marketplace, so nothing goes to waste.
+                </p>
+              </div>
             </div>
             ) : (
               messages.map((msg) => (
