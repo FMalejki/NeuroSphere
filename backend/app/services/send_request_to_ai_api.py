@@ -6,6 +6,7 @@ import logging
 
 from app.models.prompt_model import PromptModel
 from app.models.prompt_request_model import PromptRequestModel
+from app.services.image_generation_service import ImageGenerationService
 from app.services.openai_service import (
     send_to_openai,
     send_to_gemini,
@@ -40,6 +41,12 @@ async def send_request_to_ai_api(
     """
     try:
         logger.debug("Inside send_request_to_ai_api")
+
+        if prompt_request.generate_image:
+            logger.debug("Image generation requested.")
+            image_generator = ImageGenerationService()
+            response = await image_generator.generate_image(prompt_request)
+            return {"response": response}
 
         # Extract fields from the prompt_request model
         model_info = prompt_request.model_id

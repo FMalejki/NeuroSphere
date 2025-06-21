@@ -26,6 +26,7 @@ const Chat = () => {
   const [availablePrompts, setAvailablePrompts] = useState([]);
   const [currentChat, setCurrentChat] = useState(null);
   const [chatTitle, setChatTitle] = useState('');
+  const [generateImage, setGenerateImage] = useState(false);
 
   useEffect(() => {
     if (currentChat) {
@@ -337,13 +338,15 @@ const handleSendMessage = async () => {
       conversation_id: currentChat.id,
       model_id: currentChat.chosen_model || 'gemini', 
       prompt_ids: currentChat.chosen_prompts || [],
-      files: processedFiles 
+      files: processedFiles,
+      generate_image: generateImage
     };
     
     console.log('Sending request with:', {
       model: requestData.model_id,
       prompt_count: requestData.prompt_ids.length, 
-      file_count: processedFiles.length
+      file_count: processedFiles.length,
+      generate_image: requestData.generate_image
     });
 
     const response = await fetch(`http://localhost:8000/prompt-request`, {
@@ -363,16 +366,25 @@ const handleSendMessage = async () => {
 
     const data = await response.json();
     
-    if (!data || !data.response || !data.response.response) {
+    const aiResponse = data?.response?.response;
+    let responseContent;
+
+    // Handle both string and structured object responses from the backend
+    if (typeof aiResponse === 'string') {
+      responseContent = aiResponse;
+    } else if (aiResponse?.items?.[0]?.content) {
+      responseContent = aiResponse.items[0].content;
+    } else {
       console.error('Invalid response format:', data);
       throw new Error('Received invalid response from server');
     }
-    
+
     const botResponse = {
       id: Date.now() + 1,
-      content: data.response.response,
+      content: responseContent,
       role: 'assistant',
       timestamp: new Date(),
+      isImage: generateImage,
     };
 
     setMessages((prev) => [...prev, botResponse]);
@@ -384,6 +396,7 @@ const handleSendMessage = async () => {
   finally {
     setIsLoading(false);
     setFiles([]);
+    setGenerateImage(false);
     console.log('Files after send:', files);
   }
 };
@@ -533,7 +546,11 @@ const toggleSidebar = () => {
                         : 'bg-black text-white'
                     }`}
                   >
-                    {msg.content}
+                    {msg.isImage ? (
+                      <img src={msg.content} alt="Generated content" className="max-w-full rounded-md max-h-96" />
+                    ) : (
+                      msg.content
+                    )}
                     {/* Display files if they exist */}
                     {msg.files && msg.files.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-transparent">
@@ -616,10 +633,13 @@ const toggleSidebar = () => {
             {currentChat && (
               <div className="flex gap-2 p-4 border-transparent border-none bg-transparent items-center sticky bottom-0 z-40 max-w-[80%] w-full mx-auto">
                 <button
-                  className="bg-violet-500 text-white px-4 py-2 rounded-md hover:bg-violet-600 transition-colors"
+                  className="bg-violet-500 text-white p-2 rounded-md hover:bg-violet-600 transition-colors"
                   onClick={() => document.getElementById('file-input').click()}
+                  title="Add files"
                 >
-                  +
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
                 </button>
                 <input
                   id="file-input"
@@ -628,6 +648,15 @@ const toggleSidebar = () => {
                   multiple
                   onChange={handleFileChange}
                 />
+                <button
+                  onClick={() => setGenerateImage(!generateImage)}
+                  className={`${generateImage ? 'bg-violet-700 ring-2 ring-white' : 'bg-violet-500'} text-white p-2 rounded-md hover:bg-violet-600 transition-colors`}
+                  title="Generate Image"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>
+                </button>
                 <input
                   type="text"
                   value={input}

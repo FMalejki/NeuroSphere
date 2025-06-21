@@ -25,14 +25,18 @@ async def process_ai_request(request: Request):
         for field in required_fields:
             if field not in request_data:
                 raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+        
         files = request_data.get("files", None)
+        generate_image = request_data.get("generate_image", False) # Extract generate_image flag
+
         response = await process_prompt_request(
             prompt_ids=request_data["prompt_ids"],
             model_id=request_data["model_id"],
             user_message=request_data["user_message"],
             user_id=request_data["user_id"],
             conversation_id=request_data["conversation_id"],
-            files=files
+            files=files,
+            generate_image=generate_image # Pass generate_image flag
         )
         logger.info("Succesfully processed prompt for user_id: %s", user_id)
         return {
@@ -44,4 +48,3 @@ async def process_ai_request(request: Request):
     except Exception as e:
         print(f"Error in process_ai_request: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}") from e
-    

@@ -17,7 +17,8 @@ async def process_prompt_request(
     user_message: str,
     user_id: str,
     conversation_id: str,
-    files=None
+    files=None,
+    generate_image: bool = False # Add generate_image parameter
 ):
     """
     Process a prompt request with the given parameters.
@@ -29,6 +30,7 @@ async def process_prompt_request(
         user_id: User identifier
         conversation_id: Conversation identifier
         files: Optional files attached to the request
+        generate_image: Flag to indicate if an image should be generated
         
     Returns:
         The response from the AI API
@@ -52,19 +54,21 @@ async def process_prompt_request(
             user_message=user_message,
             user_id=user_id,
             conversation_id=conversation_id,
-            files=files
+            files=files,
+            generate_image=generate_image 
         )
     except ValueError as e:
         logger.error("Error creating PromptRequestModel: %s", str(e))
         raise HTTPException(status_code=400, detail=f"Invalid request parameters: {str(e)}")
     
     prompts_data = []
-    for prompt_id in prompt_ids:
-        prompt_data = await get_prompt_data(prompt_id)
-        logger.debug("Retrieved prompt data: %s", prompt_data)
-        if not prompt_data:
-            raise HTTPException(status_code=404, detail=f"Prompt ID {prompt_id} not found!")
-        prompts_data.append(prompt_data)
+    if not generate_image: 
+        for prompt_id in prompt_ids:
+            prompt_data = await get_prompt_data(prompt_id)
+            logger.debug("Retrieved prompt data: %s", prompt_data)
+            if not prompt_data:
+                raise HTTPException(status_code=404, detail=f"Prompt ID {prompt_id} not found!")
+            prompts_data.append(prompt_data)
     
     try:
         response = await send_request_to_ai_api(

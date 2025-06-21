@@ -13,6 +13,7 @@ class PromptRequestModel(BaseModel):
         user_id: Identifier for the user
         conversation_id: Identifier for the conversation
         files: Optional list of files provided with the request
+        generate_image: Optional flag to indicate if an image should be generated
     """
     prompt_ids: List[str] = Field(..., description="List of prompt IDs to use")
     model_id: str = Field(..., description="ID of the AI model to use")
@@ -20,4 +21,4 @@ class PromptRequestModel(BaseModel):
     user_id: str = Field(..., description="ID of the user making the request")
     conversation_id: str = Field(..., description="ID of the conversation")
     files: Optional[List[Dict[str, Any]]] = Field(None, description="List of files to process")
-
+    generate_image: Optional[bool] = Field(False, description="Flag to indicate if an image should be generated")
