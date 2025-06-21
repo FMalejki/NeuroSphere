@@ -7,6 +7,9 @@ import Image from 'next/image';
 import { assets } from '@/assets/assets';
 import Link from 'next/link';
 import GridBackground from '@/components/GridBackground';
+import { usePathname } from 'next/navigation';
+
+
 
 const Chat = () => {
   const { user } = useAppContext();
@@ -27,6 +30,8 @@ const Chat = () => {
   const [currentChat, setCurrentChat] = useState(null);
   const [chatTitle, setChatTitle] = useState('');
   const [generateImage, setGenerateImage] = useState(false);
+  const pathname = usePathname();
+  const isChat = pathname === '/chat';
 
   useEffect(() => {
     if (currentChat) {
@@ -531,6 +536,7 @@ const toggleSidebar = () => {
               <div className="flex flex-col items-center justify-center text-center text-white pt-20">
               <h1 className="text-3xl font-bold mb-2 text-violet-300 tracking-wider">NeuroSphere Chat</h1>
               <div className="text-gray-400 max-w-md space-y-5">
+                <p></p>
                 <p>
                   Start a conversation with the AI model of your choice — including OpenAI, Gemini and many others!
                 </p>
@@ -540,7 +546,9 @@ const toggleSidebar = () => {
                 <p>
                   Select the best model for your task, customize your experience and explore the full potential of generative AI. NeuroSphere gives you the tools — you bring the vision.
                 </p>
-                <hr className="border-gray-600" />
+                {isChat && (
+                  <hr className="border-violet-300 relative animated-chat-border" />
+                )}
                 <p className="font-semibold">
                   Unused tokens?  
                 </p>
